@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 
 class AWCChatWithAthleteController extends GetxController {
   final supabase = Supabase.instance.client;

@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:swim_strive/constants/app_urls.dart';
-import 'package:swim_strive/controller/CompleteProfileController.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/user/CompleteProfileController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 import 'package:swim_strive/view/screens/athlete/a_membership/membership_athlete.dart';
 import 'package:swim_strive/view/screens/athlete_with_coach/awc_membership/membership_athlete_with_coach.dart';
 

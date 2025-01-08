@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:swim_strive/controller/CompleteProfileController.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/user/CompleteProfileController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 import 'package:swim_strive/view/screens/bottom_nav_bar/a_nav_bar.dart';
 import 'package:swim_strive/view/screens/bottom_nav_bar/awc_nav_bar.dart';
 import 'package:swim_strive/view/screens/bottom_nav_bar/c_nav_bar.dart';

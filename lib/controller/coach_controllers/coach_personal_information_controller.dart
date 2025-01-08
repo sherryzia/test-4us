@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:swim_strive/constants/app_urls.dart';
-import 'package:swim_strive/controller/CompleteProfileController.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/user/CompleteProfileController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 import 'package:swim_strive/view/screens/coach/c_membership/coach_membership.dart';
 
 class CoachPersonalInformationController extends GetxController {

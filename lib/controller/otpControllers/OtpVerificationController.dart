@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 import 'package:swim_strive/utils/supabase_utility.dart';
 import 'package:swim_strive/view/screens/athlete/a_sign_up/a_welcome.dart';
 import 'package:swim_strive/view/screens/athlete_with_coach/awc_sign_up/awc_welcome.dart';

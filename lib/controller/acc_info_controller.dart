@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:swim_strive/controller/CompleteProfileController.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/user/CompleteProfileController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 
 class AccInfoController extends GetxController {
   final CompleteProfileController completeProfileController = Get.find<CompleteProfileController>();

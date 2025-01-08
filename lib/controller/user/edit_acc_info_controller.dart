@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:swim_strive/constants/app_urls.dart';
-import 'package:swim_strive/controller/CompleteProfileController.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/user/CompleteProfileController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 
 class EditAccInfoController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;

@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:swim_strive/constants/app_colors.dart';
 import 'package:swim_strive/constants/app_urls.dart';
 import 'package:swim_strive/main.dart';
-import 'package:swim_strive/controller/CompleteProfileController.dart';
-import 'package:swim_strive/controller/AuthController.dart';
+import 'package:swim_strive/controller/user/CompleteProfileController.dart';
+import 'package:swim_strive/controller/authentication/AuthController.dart';
 
 class EditAccountController extends GetxController {
   final CompleteProfileController completeProfileController = Get.find<CompleteProfileController>();
