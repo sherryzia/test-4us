@@ -1,7 +1,7 @@
 package com.frogger.test;
 
+import com.frogger.controller.Player;
 import com.frogger.model.GameModel;
-import com.frogger.model.Player;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
