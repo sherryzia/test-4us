@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.frogger.test.PlayerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2025-01-09T16:02:43" hostname="SHERRY_ZIA" time="0.029">
+  <properties/>
+  <testcase name="testLoseLife()" classname="com.frogger.test.PlayerTest" time="0.013"/>
+  <testcase name="testMoveDown()" classname="com.frogger.test.PlayerTest" time="0.001"/>
+  <testcase name="testMoveLeft()" classname="com.frogger.test.PlayerTest" time="0.001"/>
+  <testcase name="testCannotMoveBelowBoundary()" classname="com.frogger.test.PlayerTest" time="0.001"/>
+  <testcase name="testMoveUp()" classname="com.frogger.test.PlayerTest" time="0.002"/>
+  <testcase name="testPlayerStartsWithThreeLives()" classname="com.frogger.test.PlayerTest" time="0.0"/>
+  <testcase name="testMoveRight()" classname="com.frogger.test.PlayerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
