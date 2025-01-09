@@ -1,7 +1,7 @@
 package com.frogger.view;
 
+import com.frogger.controller.Obstacle;
 import com.frogger.model.GameModel;
-import com.frogger.model.Obstacle;
 import com.frogger.model.Player;
 
 public class GameView {

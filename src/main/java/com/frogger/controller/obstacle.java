@@ -1,4 +1,6 @@
-package com.frogger.model;
+package com.frogger.controller;
+
+import com.frogger.model.Player;
 
 public class Obstacle {
     private int x;

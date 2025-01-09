@@ -1,5 +1,6 @@
 package com.frogger.controller;
 
+import com.frogger.model.GameModel;
 import com.frogger.view.GameView;
 
 import java.util.Scanner;
