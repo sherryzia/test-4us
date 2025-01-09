@@ -1,4 +1,7 @@
-package com.frogger.model;
+package com.frogger.controller;
+
+import com.frogger.model.Obstacle;
+import com.frogger.model.Player;
 
 import java.util.ArrayList;
 import java.util.List;
