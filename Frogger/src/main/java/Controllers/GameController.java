@@ -1,15 +1,17 @@
-package controller;
+package Controllers;
 
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.Input;
 import org.newdawn.slick.SlickException;
 import views.GameView;
-import models.*;
+import models.World;
 
 public class GameController {
     private static final String[] LEVELS = {"assets/levels/0.lvl", "assets/levels/1.lvl"};
     private static final int START_LIVES = 3;
+    public static final int CONTINUE = 0; // Game is still running
+    public static final int END = -1;     // Game has ended
 
     private World world;
     private GameView view;

@@ -1,4 +1,7 @@
 /** Class for empty holes in game. **/
+
+package models;
+
 import org.newdawn.slick.SlickException;
 
 public class Empty extends Sprite {

@@ -1,6 +1,8 @@
 
 /** Class for player in game. **/
+package models;
 
+import main.App;
 import org.newdawn.slick.Image;
 import org.newdawn.slick.Input;
 import org.newdawn.slick.SlickException;

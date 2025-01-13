@@ -1,5 +1,6 @@
 
 /** Abstract Class for Sprites in game. **/
+package models;
 
 import org.newdawn.slick.SlickException;
 import utilities.BoundingBox;

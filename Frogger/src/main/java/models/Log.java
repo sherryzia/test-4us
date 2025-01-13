@@ -1,5 +1,7 @@
 
 /** Class used for all log sprites in game. */
+package models;
+
 import org.newdawn.slick.SlickException;
 
 public class Log extends Vehicle {

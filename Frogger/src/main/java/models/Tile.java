@@ -1,5 +1,6 @@
 
 /** Class for tiles in game. **/
+package models;
 
 import org.newdawn.slick.SlickException;
 

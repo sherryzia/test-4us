@@ -2,6 +2,9 @@
 /**
  * Class used for extra life sprites to be generated during runtime.
  */
+package models;
+
+import main.App;
 import org.newdawn.slick.SlickException;
 
 public class ExtraLife extends Vehicle {

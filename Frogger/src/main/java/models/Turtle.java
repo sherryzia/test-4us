@@ -1,3 +1,4 @@
+package models;
 
 /** Class for turtles in game. */
 import org.newdawn.slick.SlickException;

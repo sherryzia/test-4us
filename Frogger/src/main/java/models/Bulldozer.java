@@ -1,4 +1,5 @@
 /** Class for bulldozers in game. **/
+package models;
 
 import org.newdawn.slick.SlickException;
 

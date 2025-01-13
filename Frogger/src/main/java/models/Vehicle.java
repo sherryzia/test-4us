@@ -1,6 +1,8 @@
 
 /** Abstract class for in game vehicles. */
+package models;
 
+import main.App;
 import org.newdawn.slick.SlickException;
 
 public abstract class Vehicle extends Sprite {

@@ -1,5 +1,8 @@
 
 /** Class for four wheeled sprite vehicles in game. */
+
+package models;
+
 import org.newdawn.slick.SlickException;
 
 public class fourWheeler extends Vehicle {

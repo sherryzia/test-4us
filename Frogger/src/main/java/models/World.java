@@ -6,6 +6,8 @@ import org.newdawn.slick.SlickException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
+import models.*;
+import main.App;
 
 public class World {
 
@@ -52,6 +54,9 @@ public class World {
 	private ArrayList<Turtle> turtles = new ArrayList<Turtle>();
 	/** Array list to hold four wheeler objects. */
 	private ArrayList<fourWheeler> fours = new ArrayList<fourWheeler>();
+
+	public static final int CONTINUE = 0; // Game is still running
+	public static final int END = -1;     // Game has ended
 
 	/**
 	 * Creates world level for user.

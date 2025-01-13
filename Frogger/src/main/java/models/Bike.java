@@ -1,3 +1,4 @@
+package models;
 /** Class for bikes in game. */
 import org.newdawn.slick.SlickException;
 
