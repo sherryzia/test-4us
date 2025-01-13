@@ -2,6 +2,7 @@ import controller.GameController;
 import org.newdawn.slick.AppGameContainer;
 import org.newdawn.slick.BasicGame;
 import org.newdawn.slick.GameContainer;
+import org.newdawn.slick.Graphics;
 import org.newdawn.slick.SlickException;
 
 public class App extends BasicGame {
@@ -11,7 +12,7 @@ public class App extends BasicGame {
     private GameController controller;
 
     public App() {
-        super("Frogger MVC");
+        super("Shadow Leap MVC");
     }
 
     @Override
@@ -26,7 +27,7 @@ public class App extends BasicGame {
     }
 
     @Override
-    public void render(GameContainer gc, org.newdawn.slick.Graphics g) throws SlickException {
+    public void render(GameContainer gc, Graphics g) throws SlickException {
         controller.render(gc, g);
     }
 

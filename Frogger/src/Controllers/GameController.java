@@ -8,8 +8,7 @@ import org.newdawn.slick.SlickException;
 import view.GameView;
 
 public class GameController {
-    private static final String LEVEL_0 = "assets/levels/0.lvl";
-    private static final String LEVEL_1 = "assets/levels/1.lvl";
+    private static final String[] LEVELS = {"assets/levels/0.lvl", "assets/levels/1.lvl"};
     private static final int START_LIVES = 3;
 
     private World world;
@@ -22,7 +21,7 @@ public class GameController {
 
     public void init(GameContainer gc) throws SlickException {
         currentLevel = 0;
-        world = new World(LEVEL_0, START_LIVES);
+        world = new World(LEVELS[currentLevel], START_LIVES);
     }
 
     public void update(GameContainer gc, int delta) throws SlickException {
@@ -32,16 +31,20 @@ public class GameController {
         if (code == World.END) {
             gc.exit();
         } else if (code != World.CONTINUE) {
-            if (currentLevel == 0) {
-                world = new World(LEVEL_1, code);
-                currentLevel = 1;
-            } else {
-                gc.exit();
-            }
+            changeLevel(code, gc);
         }
     }
 
     public void render(GameContainer gc, Graphics g) throws SlickException {
         view.render(world, g);
+    }
+
+    private void changeLevel(int playerLives, GameContainer gc) throws SlickException {
+        if (currentLevel < LEVELS.length - 1) {
+            currentLevel++;
+            world = new World(LEVELS[currentLevel], playerLives);
+        } else {
+            gc.exit(); // End the game if no more levels.
+        }
     }
 }
