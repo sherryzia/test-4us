@@ -1,3 +1,5 @@
+package models;
+
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.Input;
 import org.newdawn.slick.SlickException;
@@ -53,17 +55,17 @@ public class World {
 
 	/**
 	 * Creates world level for user.
-	 * 
+	 *
 	 * @param level 	Address of csv file containing details of world to create.
 	 * @param lives 	Number of lives player is to have at world creation.
 	 * @throws SlickException
 	 */
 	public World(String level, int lives) throws SlickException {
 
-		
+
 		player = new Player(lives);
 
-		
+
 		for (int x : EMPTY_X) {
 			empties.add(new Empty(x, HOLE_Y));
 		}
@@ -142,7 +144,7 @@ public class World {
 
 	/**
 	 * Generates extra life when designated time is reached.
-	 * 
+	 *
 	 * @param extraTime 	Indicates how long since last extra life was in world.
 	 * @throws SlickException
 	 */
@@ -158,7 +160,7 @@ public class World {
 
 	/**
 	 * Method handles updating status of the extra life object in the game.
-	 * 
+	 *
 	 * @param delta 	Number of milliseconds since last frame was updated.
 	 * @throws SlickException
 	 */
@@ -189,7 +191,7 @@ public class World {
 	/**
 	 * Method updates the all sprites in the world. Checks for collisions between
 	 * sprites too.
-	 * 
+	 *
 	 * @param input 	Keyboard input from user.
 	 * @param delta 	Number of milliseconds since last frame was updated.
 	 * @return 			Returns game status value from called method game_status().
@@ -257,7 +259,7 @@ public class World {
 	/**
 	 * Method assess state of the world, makes decision whether game continues,
 	 * ends, or next level is reached.
-	 * 
+	 *
 	 * @return		Game status code indicating the state of the game.
 	 */
 	public int game_status() {
@@ -278,7 +280,7 @@ public class World {
 		return App.CONTINUE;
 
 	}
-	
+
 	/**
 	 * Draws all sprites in game.
 	 * @param g		The Slick graphics object, used for drawing.
@@ -292,7 +294,7 @@ public class World {
 		for (Tile w : water) {
 			w.render();
 		}
-		
+
 		for (Tile t : trees) {
 			t.render();
 		}
@@ -320,13 +322,13 @@ public class World {
 			f.render();
 
 		}
-		
+
 		/* Only render extra sprite if its in game. */
 		if (extra != null) {
 
 			extra.render();
 		}
-		
+
 		player.render();
 
 	}

@@ -1,6 +1,5 @@
-package view;
+package views;
 
-import model.World;
 import org.newdawn.slick.Graphics;
 
 public class GameView {

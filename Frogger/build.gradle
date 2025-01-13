@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Slick2D and LWJGL dependencies
+    implementation 'org.slick2d:slick2d-core:1.0.2'
+    implementation 'org.lwjgl:lwjgl:3.3.6'
+
+    // Add other dependencies if needed
+}
+
+application {
+    // Main class to run
+    mainClass = 'App'
+}

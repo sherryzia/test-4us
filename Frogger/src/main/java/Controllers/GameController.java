@@ -1,11 +1,11 @@
 package controller;
 
-import model.World;
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.Input;
 import org.newdawn.slick.SlickException;
-import view.GameView;
+import views.GameView;
+import models.*;
 
 public class GameController {
     private static final String[] LEVELS = {"assets/levels/0.lvl", "assets/levels/1.lvl"};
