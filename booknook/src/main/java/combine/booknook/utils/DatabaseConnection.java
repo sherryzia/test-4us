@@ -5,19 +5,16 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnection {
-    private static final String DATABASE_URL = "jdbc:sqlite:src/main/resources/database/booknook.db"; // Update path if needed
-    private static Connection connection;
+    private static final String DATABASE_URL = "jdbc:sqlite:src/main/resources/database/booknook.db";
 
-    // Establishes a connection to the SQLite database
+    // Establishes a new connection to the SQLite database
     public static Connection getConnection() {
-        if (connection == null) {
-            try {
-                connection = DriverManager.getConnection(DATABASE_URL);
-                System.out.println("Database connection established.");
-            } catch (SQLException e) {
-                System.err.println("Failed to connect to the database: " + e.getMessage());
-            }
+        try {
+            return DriverManager.getConnection(DATABASE_URL);
+        } catch (SQLException e) {
+            System.err.println("Failed to connect to the database: " + e.getMessage());
+            return null;
         }
-        return connection;
     }
 }
+

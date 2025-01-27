@@ -4,106 +4,101 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/*
- * BookManagement Class
- * This class is responsible for managing books and their categories in the system.
- * It provides methods to add books, add categories, retrieve book lists, and retrieve category lists.
- */
+import combine.booknook.utils.DatabaseConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BookManagement implements ProductManagement {
 
-     // List of book categories available in the library
     public List<BooksCategory> categoryList = new ArrayList<>();
-    // List of all books available in the library
     public List<BooksEntry> bookList = new ArrayList<>();
 
     public BookManagement() {
-        this.startservice();
+        this.loadCategoriesFromDatabase();
+        this.loadBooksFromDatabase();
     }
 
-    public void startservice() {
-        
-        // Predefined categories for the library system
-        
-        BooksCategory[] categories = {
-    new BooksCategory(1, "Programming"),
-    new BooksCategory(2, "Science Fiction"),
-    new BooksCategory(3, "History")
-   
-};
+    // Load categories from the database
+    private void loadCategoriesFromDatabase() {
+        categoryList.clear();
+        String query = "SELECT * FROM categories"; // Assuming a `categories` table exists
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
 
-         // Adding categories to the category list
-        categoryList.addAll(Arrays.asList(categories));
-
-        // Predefined books for the library system
-        
-        BooksEntry[] books = {
-    new BooksEntry(1, "T001", "Java Foundations", categoryList.get(0), "Alice Johnson", 39.99),
-    new BooksEntry(2, "N001", "Ruby Tales", categoryList.get(1), "Michael Carter", 42.75),
-    new BooksEntry(3, "T002", "Advanced Java Concepts", categoryList.get(0), "David Green", 49.99),
-    new BooksEntry(4, "NF002", "The Art of Software", categoryList.get(2), "Sarah Thompson", 45.25),
-    new BooksEntry(5, "N002", "The Code Chronicles", categoryList.get(1), "Emily Davis", 46.50),
-    new BooksEntry(6, "T003", "Clean Code Practices", categoryList.get(0), "Robert Martin", 41.80)
-};
-
-        // Adding books to the book list
-        bookList.addAll(Arrays.asList(books));
-
+            while (resultSet.next()) {
+                BooksCategory category = new BooksCategory(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name")
+                );
+                categoryList.add(category);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading categories: " + e.getMessage());
+        }
     }
 
-    /*
- * Adds a new book to the system.
- * This method takes a BooksEntry object as input, adds it to the book list,
- * and ensures that the book is properly categorized.
- *
- * @param book The book to be added
- * @return The updated list of books
- */
+    // Load books from the database
+    private void loadBooksFromDatabase() {
+        bookList.clear();
+        String query = "SELECT * FROM books";
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
 
+            while (resultSet.next()) {
+                BooksEntry book = new BooksEntry(
+                        resultSet.getInt("id"),
+                        resultSet.getString("item_code"),
+                        resultSet.getString("name"),
+                        new BooksCategory(0, resultSet.getString("category")), // Category ID is optional
+                        resultSet.getString("author"),
+                        resultSet.getDouble("price")
+                );
+                bookList.add(book);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading books: " + e.getMessage());
+        }
+    }
+
+    @Override
     public List<BooksEntry> addBook(BooksEntry book) {
-        bookList.add(book);
+        String query = "INSERT INTO books (item_code, name, author, category, price) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, book.getItemCode());
+            statement.setString(2, book.getName());
+            statement.setString(3, book.getAuthor());
+            statement.setString(4, book.getCategory().getName());
+            statement.setDouble(5, book.getPrice());
+            statement.executeUpdate();
+            bookList.add(book);
+        } catch (Exception e) {
+            System.err.println("Error adding book: " + e.getMessage());
+        }
         return bookList;
-
     }
-/*
- * Adds a new category to the system.
- * This method takes a category name as input, creates a new BooksCategory object,
- * and adds it to the category list.
- *
- * @param categoryName The name of the category to be added
- * @return The updated list of categories
- */
 
-    
+    @Override
     public List<BooksCategory> addCategory(String name) {
-        // Dynamically generates a new ID based on the current size of the category list
-        int id = categoryList.size() + 1;
-        // Creates a new category object and adds it to the category list
-        BooksCategory category = new BooksCategory(id, name);
-        categoryList.add(category);
-        // Returns the updated list of categories
+        String query = "INSERT INTO categories (name) VALUES (?)"; // Assuming a `categories` table exists
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, name);
+            statement.executeUpdate();
+            categoryList.add(new BooksCategory(categoryList.size() + 1, name));
+        } catch (Exception e) {
+            System.err.println("Error adding category: " + e.getMessage());
+        }
         return categoryList;
     }
-
-    /*
- * Retrieves the list of books in the system.
- * This method returns all books currently stored in the book list.
- *
- * @return A list of books
- */
-// Returns the list of categories
-
-/*
- * Retrieves the list of categories in the system.
- * This method returns all categories currently stored in the category list.
- *
- * @return A list of categories
- */
 
     public List<BooksCategory> getCategories() {
         return categoryList;
     }
-
 }
-
-//end

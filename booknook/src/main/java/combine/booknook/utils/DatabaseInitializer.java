@@ -10,7 +10,7 @@ public class DatabaseInitializer {
         try (Connection connection = DatabaseConnection.getConnection();
              Statement statement = connection.createStatement()) {
 
-            // Load the schema file
+            // Load the schema file (ensure the file path is correct)
             String schema = new String(Files.readAllBytes(Paths.get("src/main/resources/database/schema.sql")));
 
             // Execute the schema
@@ -22,3 +22,4 @@ public class DatabaseInitializer {
         }
     }
 }
+

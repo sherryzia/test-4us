@@ -1,211 +1,125 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package combine.booknook.partb;
 
-import combine.booknook.partb.ui.Console;
-
+import combine.booknook.utils.DatabaseConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
-
-/**
- * This class handles operations specific to customers and their interactions
- * within the library system. It includes functionalities such as login, 
- * managing user accounts, and retrieving user data.
- *
- * Tasks for Group B:
- * - Implement features for customers extending the User class.
- * - Initialize the system with a default list of users.
- * - Perform all actions based on the userList initialized at the start.
- *
- * Developed by: Team B
- */
 
 public class BooksCustomer implements UserManagement {
 
-    Scanner scanner = new Scanner(System.in);
-    Console console = new Console();
-    public List<User> userList = new ArrayList<>();
-    public List<User> loggedInList = new ArrayList<>();
-    public String username;
     public boolean isLoggedIn = false;
     public boolean isAdmin = false;
+    private List<User> loggedInUsers = new ArrayList<>();
 
     public BooksCustomer() {
-
-        this.loadUsers();
-
     }
-
-    /*
- * Utility function to initialize the system with a default list of users.
- * Adds predefined user accounts to the user list for testing and operations.
- */
-
-    private void loadUsers() {
-        // create user
-        User[] users = {
-    new User(1, "admin", "admin@library.com", "admin123", "admin"),
-    new User(2, "Alice Smith", "alice@library.com", "pass123", "customer"),
-    new User(3, "Bob Johnson", "bob@library.com", "pass123", "customer"),
-    new User(4, "Charlie Brown", "charlie@library.com", "pass123", "customer"),
-    new User(5, "Diana Prince", "diana@library.com", "pass123", "customer")
-};
-
-
-        userList.addAll(Arrays.asList(users));
-
-    }
-
-/*
- * Authenticates a user based on their email and password.
- * If authentication is successful, the user's login status is updated,
- * and the user is added to the logged-in list.
- *
- * @param email    The user's email or name
- * @param password The user's password
- * @return A list containing the authenticated user
- */
 
     @Override
     public List<User> LoginUser(String email, String password) {
-        for (User user : this.userList) {
-            boolean isEmail = false;
-            boolean isPassword = false;
-            if (user.getEmail().equalsIgnoreCase(email) || user.getName().contains(email)) {
-                isEmail = true;
-            }
-            if (user.getPassword().equalsIgnoreCase(password)) {
-                isPassword = true;
-            }
-            if (isEmail && isPassword) {
-                if (user.getUser_role().toLowerCase().equalsIgnoreCase("admin")) {
-                    this.isAdmin = true;
+        List<User> users = new ArrayList<>();
+        String query = "SELECT * FROM users WHERE email = ? AND password = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            statement.setString(2, password);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    User user = new User(
+                            resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password"),
+                            resultSet.getString("role")
+                    );
+                    users.add(user);
+                    loggedInUsers.add(user);
+                    if ("admin".equalsIgnoreCase(user.getUser_role())) {
+                        isAdmin = true;
+                    }
+                    isLoggedIn = true;
                 }
-                this.isLoggedIn = true;
-                this.loggedInList.add(user);
             }
+        } catch (Exception e) {
+            System.err.println("Login failed: " + e.getMessage());
         }
-        return loggedInList;
-
+        return users;
     }
-
-    /*
- * Deletes a user from the system based on their email.
- * If the user is found, they are removed from the user list,
- * and a success message is returned. Otherwise, a failure message is returned.
- *
- * @param email The email of the user to delete
- * @return A success or failure message
- */
 
     @Override
     public String deleteUser(String email) {
-        String message;
-        int index = -1;
-        String name = "";
-        for (User user : this.userList) {
-            if (user.getEmail().contentEquals(email)) {
-                index = this.userList.indexOf(user);
-                name = user.getName();
-            }
+        String query = "DELETE FROM users WHERE email = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            int rowsDeleted = statement.executeUpdate();
+            return rowsDeleted > 0 ? "User deleted successfully." : "User not found.";
+        } catch (Exception e) {
+            return "Error deleting user: " + e.getMessage();
         }
-        if (index != -1) {
-            userList.remove(index);
-            message = name + " with email [" + email + "] has been deleted.";
-        } else {
-            message = " User not found with email: [ " + email + "] ";
-        }
-        return message;
     }
-
-    /*
- * Updates the details of an existing user in the system.
- * Allows modifications to the user's name, email, role, and password.
- *
- * @param data An array containing the updated user details
- * @return The updated list of users
- */
 
     @Override
     public List<User> updateUser(String[] data) {
-        
-        int index = -1;
-        String password = null;
-        String email = null;
-        String role = null;
-        String name = data[0];
-        for (User usr : this.userList) {
-            if (usr.getName().toLowerCase().contains(name.toLowerCase())) {
-                index = userList.indexOf(usr);
-                password = usr.getPassword();
-            }
+        String query = "UPDATE users SET name = ?, email = ?, role = ? WHERE name = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, data[1]);
+            statement.setString(2, data[2]);
+            statement.setString(3, data[3]);
+            statement.setString(4, data[0]);
+            statement.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("Error updating user: " + e.getMessage());
         }
-        if (index != -1) {
-            if (data.length > 2) {
-                if ("".equals(data[1])) {
-                    name = this.userList.get(index).getName();
-                } else {
-                    name = data[1];
-                }
-                if ("".equals(data[2])) {
-                    email = this.userList.get(index).getEmail();
-                } else {
-                    email = data[2];
-                }
-                if ("".equals(data[3])) {
-                    role = this.userList.get(index).getUser_role();
-                } else {
-                    role = data[3];
-                }
-            }else{
-                email = this.userList.get(index).getEmail();
-                role = this.userList.get(index).getUser_role();
-            }
-
-            User updateUser = new User(this.userList.get(index).getId(), name, email, password, role);
-            userList.set(index, updateUser);
-        } 
-
-        return userList;
-
+        return viewUsers();
     }
-
-    /*
- * Retrieves and returns the list of all registered users in the system.
- * This method can be used to display user information.
- *
- * @return A list of all users
- */
 
     @Override
     public List<User> viewUsers() {
-        return this.userList;
+        List<User> users = new ArrayList<>();
+        String query = "SELECT * FROM users";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
 
+            while (resultSet.next()) {
+                users.add(new User(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getString("email"),
+                        resultSet.getString("password"),
+                        resultSet.getString("role")
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error viewing users: " + e.getMessage());
+        }
+        return users;
     }
-
-    /*
- * Retrieves a specific user from the system based on their username or email.
- * This method searches the user list for a match and returns the user as a list.
- *
- * @param username The username or email of the user to retrieve
- * @return A list containing the matching user, or an empty list if no match is found
- */
 
     @Override
     public List<User> getUser(String username) {
-        List<User> singleUser = new ArrayList<>();
-        for (User usr : this.userList) {
-            if (usr.getName().contains(username) || usr.getEmail().equalsIgnoreCase(username)) {
-                singleUser.add(usr);
+        List<User> users = new ArrayList<>();
+        String query = "SELECT * FROM users WHERE name = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    users.add(new User(
+                            resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password"),
+                            resultSet.getString("role")
+                    ));
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Error retrieving user: " + e.getMessage());
         }
-
-        return singleUser;
-
+        return users;
     }
-
 }

@@ -7,188 +7,173 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-
+import combine.booknook.utils.DatabaseConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 /**
  * The BookManagement class acts as the primary service layer for managing books,
- * categories, orders, and related operations. 
- * 
+ * categories, orders, and related operations.
+ *
  * This service includes methods for searching, purchasing, and managing orders.
  * It does not include user authentication, as per Group A's specifications.
- * 
+ *
  * @author Delia Turiac
  */
 public final class BookManagement implements ProductManagement {
-    // Stores all customer orders
-    public List<BooksOrder> orders = new ArrayList<>();
-    // List of categories to classify books 
-    public List<BooksCategory> categoryList = new ArrayList<>();
-    // A collection of all available books in the service
     public List<BooksEntry> bookList = new ArrayList<>();
-    // A separate list to store all created orders
-    public List<BooksOrder> orderList = new ArrayList<>();
-    
-    
-    /**
-     * Default constructor for initializing the BookManagement.
-     * Automatically populates the category and book lists during initialization.
-     */
+
     public BookManagement() {
-        this.startservice(); // Initialize the service with default data
-        
-    }
-    
-    /**
-     * Initializes the service with predefined categories and books.
-     * Populates the category list and book list with default values.
-     */
-    public void startservice() {
-        // Define default categories
-        BooksCategory[] category = {
-            new BooksCategory(1, "Science Fiction"),
-            new BooksCategory(2, "Mystery & Thriller"),
-            new BooksCategory(3, "Health"),
-        };
-        
-        // Add the predefined categories to the category list
-        categoryList.addAll(Arrays.asList(category));
-
-        // Define default books and associate them with categories
-        BooksEntry[] books = {
-            new BooksEntry(1, "S0001", "Dune", categoryList.get(0), "Frank Herbert", 39.99),
-            new BooksEntry(2, "M0001", "The Girl with the Dragon Tattoo", categoryList.get(1), "Stieg Larsson", 45.50),
-            new BooksEntry(3, "H0001", "Atomic Habits", categoryList.get(2), "James Clear", 29.99),                 
-            new BooksEntry(4, "S0002", "Sapiens: A Brief History of Humankind", categoryList.get(0), "Yuval Noah Harari", 50.00),
-            new BooksEntry(5, "M0002", "Gone Girl", categoryList.get(1), "Gillian Flynn", 41.99),
-            new BooksEntry(6, "H0002", "The Power of Habit", categoryList.get(2), "Charles Duhigg", 31.50),
-        };
-        
-        // Add the predefined books to the book list
-        bookList.addAll(Arrays.asList(books));
-
+        this.loadBooksFromDatabase();
     }
 
-    /**
-     * Searches for books based on a query string. 
-     * The query can match part or all of a book's name or author's name.
-     * 
-     * @param query The search term, which can be part of the book or author name.
-     * @return A list of books that match the search criteria.
-     */
+    private void loadBooksFromDatabase() {
+        bookList.clear();
+        String query = "SELECT * FROM books";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                BooksEntry book = new BooksEntry(
+                        resultSet.getInt("id"),
+                        resultSet.getString("item_code"),
+                        resultSet.getString("name"),
+                        new BooksCategory(0, resultSet.getString("category")), // No category ID in your schema
+                        resultSet.getString("author"),
+                        resultSet.getDouble("price")
+                );
+                bookList.add(book);
+            }
+            System.out.println("Books loaded successfully from the database.");
+        } catch (Exception e) {
+            System.err.println("Error loading books: " + e.getMessage());
+        }
+    }
+
+
     @Override
     public List<BooksEntry> searchBook(String query) {
-        
         List<BooksEntry> searchList = new ArrayList<>();
         for (BooksEntry book : this.bookList) {
-            if (book.getAuthor().toLowerCase().contains(query.toLowerCase())) {
-                searchList.add(book);
-            }
-            if (book.getName().toLowerCase().contains(query.toLowerCase())) {
+            if (book.getAuthor().toLowerCase().contains(query.toLowerCase()) ||
+                    book.getName().toLowerCase().contains(query.toLowerCase()) ||
+                    book.getCategory().getName().toLowerCase().contains(query.toLowerCase())) {
                 searchList.add(book);
             }
         }
         return searchList;
     }
 
-     /**
-     * Simulates the purchase of a book based on its item code.
-     * Matching books are added to a purchased list, and an order is created.
-     * 
-     * @param code The unique item code of the book to purchase.
-     * @return A list containing the purchased book(s).
-     */
     @Override
-    public List<BooksEntry> purchaseBook(String code) {    
-        List<BooksEntry> pBook = new ArrayList<>();
-        for (BooksEntry b : this.bookList) {
-            if (b.getItemCode().toLowerCase().contains(code.toLowerCase())) {
-                pBook.add(b);  // Add the book to the purchase list
-                orders.add(createOrder(b)); // Create an order for the book
+    public List<BooksEntry> purchaseBook(String code) {
+        List<BooksEntry> purchasedBooks = new ArrayList<>();
+        for (BooksEntry book : bookList) {
+            if (book.getItemCode().equalsIgnoreCase(code)) {
+                purchasedBooks.add(book);
+                createOrder(book); // Create an order for each purchased book
             }
         }
-        
-        return pBook;
+        return purchasedBooks;
     }
 
-    /**
-     * Creates an order for a given book.
-     * Generates a unique order ID and associates it with the book details.
-     * 
-     * @param book The book for which the order is created.
-     * @return The created order.
-     */
     @Override
     public BooksOrder createOrder(BooksEntry book) {
-        UUID uuid = UUID.randomUUID(); // Generate a unique identifier for the order
-        
-        // Create order details using book attributes
-        BooksOrderDetails orderSetails = new BooksOrderDetails(book.getItemCode(), 
-                                        book.getName(), book.getPrice(),  
-                                     book.getCategory(),1);
-        
-        // Create the order object and link it to the generated order details
-        BooksOrder order= new BooksOrder(uuid.toString(), "member A", 
-                orderSetails);
-        order.addOrderDetails(orderSetails);
-        orderList.add(order); // Add the order to the order list
-        return order; 
-    }
-    
-    /**
-     * Generates a sales report summarizing the total quantity sold for each product.
-     * 
-     * @return A map where keys are product codes and values are total quantities sold.
-     */
-    @Override
-    public Map<String , Integer> createSalesReport() {
-        Map<String, Integer> totalQuantityPerProduct = getTotalQuantityPerProduct();
-        return totalQuantityPerProduct;    
+        String orderId = java.util.UUID.randomUUID().toString(); // Generate unique order ID
+        String queryOrder = "INSERT INTO orders (order_id, user, total_price) VALUES (?, ?, ?)";
+        String queryOrderDetails = "INSERT INTO order_details (order_id, item_code, quantity) VALUES (?, ?, ?)";
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            // Insert into orders
+            try (PreparedStatement statementOrder = connection.prepareStatement(queryOrder)) {
+                statementOrder.setString(1, orderId);
+                statementOrder.setString(2, "Guest"); // Replace with actual user from session
+                statementOrder.setDouble(3, book.getPrice());
+                statementOrder.executeUpdate();
+            }
+
+            // Insert into order details
+            try (PreparedStatement statementDetails = connection.prepareStatement(queryOrderDetails)) {
+                statementDetails.setString(1, orderId);
+                statementDetails.setString(2, book.getItemCode());
+                statementDetails.setInt(3, 1); // Default quantity
+                statementDetails.executeUpdate();
+            }
+            System.out.println("Order created successfully for book: " + book.getName());
+        } catch (Exception e) {
+            System.err.println("Error creating order: " + e.getMessage());
+        }
+        return null; // Modify to return a proper BooksOrder object if needed
     }
 
-    /**
-     * Returns a list of all available books. This does not display actual customer orders.
-     *
-     * @return A list of books available in the service.
-     */
     @Override
     public List<BooksEntry> viewOrders() {
-        return bookList;
+        List<BooksEntry> orderedBooks = new ArrayList<>();
+        String query = "SELECT b.item_code, b.name, b.author, b.category, b.price " +
+                "FROM orders o " +
+                "JOIN order_details od ON o.order_id = od.order_id " +
+                "JOIN books b ON od.item_code = b.item_code";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                BooksEntry book = new BooksEntry(
+                        resultSet.getString("item_code"),
+                        resultSet.getString("name"),
+                        resultSet.getDouble("price"),
+                        new BooksCategory(0, resultSet.getString("category"))
+                );
+                book.setAuthor(resultSet.getString("author"));
+                orderedBooks.add(book);
+            }
+        } catch (Exception e) {
+            System.err.println("Error retrieving orders: " + e.getMessage());
+        }
+        return orderedBooks;
     }
-    
-    /**
-     * Calculates the total quantity sold for each product.
-     *
-     * @return A map where keys are product codes and values are total quantities sold.
-     */
+
+
     public Map<String, Integer> getTotalQuantityPerProduct() {
         Map<String, Integer> bookSales = new HashMap<>();
-        for (BooksOrder order : this.orders) {
-            for (BooksOrderDetails detail : order.order_details) {
-                String productCode = detail.getItemCode();
-                int quantity = detail.getQuantity();
-                bookSales.put(productCode, bookSales.getOrDefault(productCode, 0) + quantity);
+        String query = "SELECT item_code, SUM(quantity) AS total_quantity " +
+                "FROM order_details " +
+                "GROUP BY item_code";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                String itemCode = resultSet.getString("item_code");
+                int totalQuantity = resultSet.getInt("total_quantity");
+                bookSales.put(itemCode, totalQuantity);
             }
+        } catch (Exception e) {
+            System.err.println("Error fetching total quantities per product: " + e.getMessage());
         }
         return bookSales;
     }
-    
-    /**
-     * Generates a random User object for testing purposes.
-     * This utility method is currently unused and serves as a placeholder for future development.
-     */
-    // public User getRandomUser() {
-    //     String[][] userData = {
-    //         {"Alice", "alice@example.com"},
-    //         {"Bob", "bob@example.com"},
-    //         {"Catherine", "catherine@example.com"},
-    //         {"Daniel", "daniel@example.com"},
-    //         {"Emma", "emma@example.com"},
-    //         {"Frank", "frank@example.com"}
-    //     };
-    //
-    //     Random random = new Random();
-    //     int randomIndex = random.nextInt(userData.length);
-    //
-    //     User user = new User(userData[randomIndex][0], userData[randomIndex][1]);
-    //     return user;
-    // }
+
+    @Override
+    public Map<String, Integer> createSalesReport() {
+        Map<String, Integer> salesReport = new HashMap<>();
+        String query = "SELECT b.name, SUM(od.quantity) AS total_quantity " +
+                "FROM books b " +
+                "JOIN order_details od ON b.item_code = od.item_code " +
+                "GROUP BY b.name";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                String bookName = resultSet.getString("name");
+                int totalQuantity = resultSet.getInt("total_quantity");
+                salesReport.put(bookName, totalQuantity);
+            }
+        } catch (Exception e) {
+            System.err.println("Error generating sales report: " + e.getMessage());
+        }
+        return salesReport;
+    }
 }
