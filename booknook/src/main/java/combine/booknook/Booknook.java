@@ -12,8 +12,13 @@ package combine.booknook;
 
 public class Booknook {
     static Combine gui = new Combine();
+
     public static void main(String[] args) {
+        // Initialize the database
+        combine.booknook.utils.DatabaseInitializer.initialize();
+
+        // Start the application
         gui.processMenu();
     }
-
 }
+
