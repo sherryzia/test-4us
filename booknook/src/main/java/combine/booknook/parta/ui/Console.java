@@ -1,8 +1,7 @@
 package combine.booknook.parta.ui;
 
-import booknook.parta.BooksCategory;
-import booknook.parta.BooksEntry;
-import booknook.parta.BooksOrder;
+import combine.booknook.parta.BooksEntry;
+import combine.booknook.parta.BooksOrder;
 import de.vandermeer.asciitable.AsciiTable;
 import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.time.LocalDateTime;

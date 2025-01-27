@@ -1,10 +1,7 @@
 package combine.booknook.partb.ui;
 
-import booknook.partb.BooksEntry;
-import booknook.partb.BookManagement;
-import booknook.partb.BooksCategory;
-import booknook.partb.BooksCustomer;
-import booknook.partb.User;
+import combine.booknook.partb.*;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

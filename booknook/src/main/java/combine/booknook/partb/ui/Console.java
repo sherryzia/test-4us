@@ -1,10 +1,9 @@
 
 package combine.booknook.partb.ui;
 
-import booknook.partb.BooksEntry;
-import booknook.partb.BooksCategory;
-import booknook.partb.User;
-
+import combine.booknook.partb.BooksCategory;
+import combine.booknook.partb.BooksEntry;
+import combine.booknook.partb.User;
 import de.vandermeer.asciitable.AsciiTable;
 import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.util.ArrayList;

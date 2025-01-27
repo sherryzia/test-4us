@@ -1,8 +1,8 @@
 package combine.booknook.parta.ui;
 
-import booknook.parta.BooksEntry;
-import booknook.parta.BookManagement;
-import booknook.parta.BooksOrder;
+import combine.booknook.parta.BookManagement;
+import combine.booknook.parta.BooksEntry;
+import combine.booknook.parta.BooksOrder;
 import de.vandermeer.asciitable.AsciiTable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -214,7 +214,7 @@ public class GuiController {
 
         Scanner scanner = new Scanner(System.in);
         boolean user_action = true;
-        
+
 
         while (user_action) {
             int userInput = 0;
@@ -222,7 +222,7 @@ public class GuiController {
             String key = scanner.next();
             try {
                 userInput = Integer.parseInt(key);
-                
+
 
                 switch (userInput) {
                     case 1:

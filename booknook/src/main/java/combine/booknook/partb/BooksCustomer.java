@@ -4,7 +4,8 @@
  */
 package combine.booknook.partb;
 
-import booknook.partb.ui.Console;
+import combine.booknook.partb.ui.Console;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

@@ -4,9 +4,10 @@
  */
 package combine.booknook.parta.ui;
 
-import booknook.parta.BooksEntry;
-import booknook.parta.BookManagement;
-import booknook.parta.BooksCategory;
+import combine.booknook.partb.BookManagement;
+import combine.booknook.partb.BooksCategory;
+import combine.booknook.partb.BooksEntry;
+
 import java.util.Arrays;
 import java.util.Random;
 

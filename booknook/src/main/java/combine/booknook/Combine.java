@@ -1,5 +1,7 @@
 package combine.booknook;
 
+import combine.booknook.parta.BookManagement;
+import combine.booknook.parta.ui.GuiController;
 import de.vandermeer.asciitable.AsciiTable;
 import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.util.Scanner;
@@ -10,12 +12,11 @@ import java.util.Scanner;
  */
 public class Combine {
 
-    public static booknook.parta.BookManagement a_bookManagement = new booknook.parta.BookManagement();
-    public static booknook.parta.ui.GuiController a_gui = new booknook.parta.ui.GuiController();
-    public static booknook.partb.BookManagement b_bookManagement = new booknook.partb.BookManagement();
-    public static booknook.partb.ui.GuiController b_gui = new booknook.partb.ui.GuiController();
-    public static alin.partc.BookManagement c_bookService = new alin.partc.BookManagement ();
-    public static alin.partc.ui.GuiController c_gui = new alin.partc.ui.GuiController();
+    public static BookManagement a_bookManagement = new BookManagement();
+    public static GuiController a_gui = new GuiController();
+    public static BookManagement b_bookManagement = new BookManagement();
+    public static GuiController b_gui = new GuiController();
+
 //    
     /**
      * Display simple information message when user is at main screen.
@@ -41,10 +42,10 @@ public class Combine {
         asciiTable.addRule();
         asciiTable.addRow("[1]        Member A Tasks");
         asciiTable.addRow("[2]        Member B Tasks");
-        asciiTable.addRow("[3]        Member C Tasks");
-        asciiTable.addRow("[4]        Exit");
+//        asciiTable.addRow("[3]        Member C Tasks");
+        asciiTable.addRow("[3]        Exit");
         asciiTable.addRule();
-        asciiTable.addRow("  Choose from options [1... 4]");
+        asciiTable.addRow("  Choose from options [1... 3]");
         asciiTable.addRule();
         asciiTable.setTextAlignment(TextAlignment.JUSTIFIED_LEFT);
         String render = asciiTable.render(60);
@@ -77,10 +78,10 @@ public class Combine {
     /**
      * Shows Group C Tasks.
      */
-    public void displayMenuGroupC(){
-        c_gui.appStart("Welcome to BookNook Member C Tasks");
-        
-    }
+//    public void displayMenuGroupC(){
+//        c_gui.appStart("Welcome to BookNook Member C Tasks");
+//
+//    }
     
     /**
      * Start Console Menu and Loop through it 
@@ -106,10 +107,10 @@ public class Combine {
                     case 2:
                         this.displayMenuGroupB();
                         break;
-                    case 3 :
-                        this.displayMenuGroupC();
-                        break;
-                    case 4:
+//                    case 3 :
+////                        this.displayMenuGroupC();
+//                        break;
+                    case 3:
                         this.exitMessage("Thank you for using BookNook.");
                         System.exit(0);
                         action = false;
