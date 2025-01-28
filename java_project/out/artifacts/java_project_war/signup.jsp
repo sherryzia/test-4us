@@ -1,52 +1,56 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-    <%@page import="java.sql.*,java.util.*"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.sql.*" %>
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
 </head>
 <body>
-<form action="signup.jsp">
-MEMBER ID :<br>
-<input type="text" name="id" /><br>
-MEMBER NAME :<br>
-<input type="text" name="name" /><br>
-CITY :<br>
-<input type="text" name="city" /><br>
-DATE REGISTER :<br>
-<input type="text" name="reg" /><br>
-DATE EXPIRE :<br>
-<input type="text" name="exp" /><br>
-MEMBERSHIP STATUS :<br>
-<input type="text" name="status" /><br>
-PASSWORD :<br>
-<input type="password" name="password" /><br><br>
-<input type="submit" />
-</form>
+    <h1>SIGN UP FORM</h1>
+    <form action="signup.jsp" method="POST">
+        NAME:<br>
+        <input type="text" name="name" /><br>
+        EMAIL:<br>
+        <input type="email" name="email" /><br>
+        PASSWORD:<br>
+        <input type="password" name="password" /><br>
+        ROLE:<br>
+        <input type="text" name="role" /><br><br>
+        <input type="submit" name="submit" value="Sign Up">
+    </form>
+
+    <%
+        String event = request.getParameter("submit");
+        if (event != null) {
+            String name = request.getParameter("name");
+            String email = request.getParameter("email");
+            String password = request.getParameter("password");
+            String role = request.getParameter("role");
+
+            try {
+                Class.forName("org.sqlite.JDBC");
+                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + application.getRealPath("/WEB-INF/booknook.db"));
+
+                PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
+                stmt.setString(1, name);
+                stmt.setString(2, email);
+                stmt.setString(3, password);
+                stmt.setString(4, role);
+
+                int rows = stmt.executeUpdate();
+                if (rows > 0) {
+                    out.println("<p style='color: green;'>User registered successfully!</p>");
+                } else {
+                    out.println("<p style='color: red;'>Failed to register user.</p>");
+                }
+
+                conn.close();
+            } catch (Exception e) {
+                out.println("<p style='color: red;'>Error: " + e.getMessage() + "</p>");
+                e.printStackTrace();
+            }
+        }
+    %>
 </body>
 </html>
-<%
-try
-{
-	
-String MEMBER_ID=request.getParameter("id");
-String MEMBER_NAME=request.getParameter("name");
-String CITY =request.getParameter("city");
-String DATE_REGISTER =request.getParameter("reg");
-String DATE_EXPIRE=request.getParameter("exp");
-String MEMBERSHIP_STATUS=request.getParameter("status");
-String PASSWORD=request.getParameter("password");
-
-Class.forName("com.mysql.jdbc.Driver");
-Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/library", "root", "Test@123");
-Statement st=conn.createStatement();
-int i=st.executeUpdate("insert into lib_members values ('"+MEMBER_ID+"','"+MEMBER_NAME+"','"+CITY+"','"+DATE_REGISTER+"','"+DATE_EXPIRE+"','"+MEMBERSHIP_STATUS+"','"+PASSWORD+"')");
-out.println("Data is successfully inserted!");
-}
-catch(SQLException e) {
-	out.println("SQLException caught: " +e.getMessage());
-	}
-
-%>
