@@ -9,8 +9,8 @@
 <body>
     <h1>LOGIN FORM</h1>
     <form action="Login.jsp" method="POST">
-        MEMBER NAME:<br>
-        <input type="text" name="member" /><br>
+        EMAIL:<br>
+        <input type="email" name="email" /><br>
         PASSWORD:<br>
         <input type="password" name="password" /><br><br>
         <input type="submit" name="submit" value="Login">
@@ -19,23 +19,24 @@
     <%
         String event = request.getParameter("submit");
         if (event != null) {
-            String memberName = request.getParameter("member");
-            String password = request.getParameter("password");
+            String email = request.getParameter("email").trim();
+            String password = request.getParameter("password").trim();
 
             try {
                 Class.forName("org.sqlite.JDBC");
-                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + application.getRealPath("/WEB-INF/booknook.db"));
-                PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE name = ? AND password = ?");
-                stmt.setString(1, memberName);
+                String dbPath = application.getRealPath("/WEB-INF/booknook.db");
+                out.println("Database path: " + dbPath); // Debugging path
+                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+
+                PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE email = ? AND password = ?");
+                stmt.setString(1, email);
                 stmt.setString(2, password);
 
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
-                    // Successful login
                     response.sendRedirect("button.jsp");
                 } else {
-                    // Invalid login
-                    out.println("<p style='color: red;'>Invalid username or password</p>");
+                    out.println("<p style='color: red;'>Invalid email or password</p>");
                 }
 
                 conn.close();
