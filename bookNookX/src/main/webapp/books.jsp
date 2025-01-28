@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>Available Books</h1>
-    <form action="BookServlet" method="get">
+<form action="books/search" method="get">
         <label for="search">Search Books:</label>
         <input type="text" id="search" name="query" placeholder="Enter book title or author" />
         <button type="submit">Search</button>
