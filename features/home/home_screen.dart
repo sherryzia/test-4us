@@ -1,4 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecomanga/common/app_colors.dart';
 import 'package:ecomanga/common/buttons/scale_button.dart';
 import 'package:ecomanga/common/widgets/news_datails_page.dart';
@@ -10,6 +11,8 @@ import 'package:ecomanga/features/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,21 +23,22 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   // Variables
-  int _currentIndex = 0;
+final RxInt _currentIndex = 0.obs;
   bool _isMarketplaceTab = false;
 
-  // Carousel Images
-  final List<String> _carouselImages = [
-    'https://static.vecteezy.com/system/resources/previews/023/603/663/non_2x/flooding-on-the-city-street-generative-ai-photo.jpg',
-    "https://virtualandco.net/wp-content/uploads/2022/04/0369_637599432108866601.jpg",
-    'https://www.baaa-acro.com/sites/default/files/import/Photos-43/ER-AZT-1.jpg',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the post controller
+    Controllers.posts.getPosts();
+    Controllers.posts.getBreakingNews();
+  }
 
   @override
   Widget build(BuildContext context) {
     // Screen Height
     final screenHeight = MediaQuery.of(context).size.height;
-    Controllers.postController.getPosts();
+    
     return Scaffold(
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
@@ -156,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        _buildCarousel(screenHeight),
+        // _buildBreakingNewsCarousel(screenHeight),
         const SizedBox(height: 8),
         _buildCarouselIndicator(),
         const SizedBox(height: 16),
@@ -167,281 +171,464 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Carousel
-  Widget _buildCarousel(double screenHeight) {
-    return CarouselSlider(
-      items: _carouselImages.map((image) {
-        return ScaleButton(
-          onTap: () {
-            Utils.go(
-              context: context,
-              screen: NewsDatailsPage(
-                img: image,
-                imagetag: image,
+  // Breaking News Carousel
+  Widget _buildBreakingNewsCarousel(double screenHeight) {
+     return Obx(() {
+    final breakingNews = Controllers.posts.breakingNews;
+    final isLoading = Controllers.posts.isLoading[FirebasePostController.GET_POSTS] ?? false;
+    
+    if (isLoading || breakingNews.isEmpty) {
+      return Center(
+        child: SizedBox(
+          height: screenHeight * 0.26,
+          child: const CircularProgressIndicator(),
+        ),
+      );
+    }
+      return CarouselSlider(
+        items: breakingNews.map((news) {
+          return ScaleButton(
+            onTap: () {
+              Utils.go(
+                context: context,
+                screen: NewsDatailsPage(
+                  img: news['imageUrl'] ?? '',
+                  imagetag: news['id'],
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.buttonColor.withOpacity(0.7),
+                ),
+                borderRadius: BorderRadius.circular(8),
               ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: AppColors.buttonColor.withOpacity(0.7),
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Hero(
-                  tag: image,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      height: 120,
-                      width: 300,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Hero(
+                    tag: news['id'],
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: news['imageUrl'] ?? '',
+                        fit: BoxFit.cover,
+                        height: 120,
+                        width: 300,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.error),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  "Lorem ipsum dolor sit amet, putate libero et velit",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  "28 October, 2024",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
+                  const SizedBox(height: 5),
+                  Text(
+                    news['title'] ?? "No title",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    news['publishedAt'] != null 
+                        ? _formatNewsDate(news['publishedAt'])
+                        : "Recent",
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }).toList(),
-      options: CarouselOptions(
-        autoPlay: true,
-        enlargeCenterPage: false,
-        height: screenHeight * 0.26,
-        onPageChanged: (index, reason) {
-          setState(() => _currentIndex = index);
-        },
-      ),
-    );
+          );
+        }).toList(),
+        options: CarouselOptions(
+          autoPlay: true,
+          enlargeCenterPage: false,
+          height: screenHeight * 0.26,
+          onPageChanged: (index, reason) {
+            setState(() => _currentIndex.value = index);
+          },
+        ),
+      );
+    });
   }
 
   // Carousel Indicator
-  Widget _buildCarouselIndicator() {
+  // Replace this method in HomeScreen
+Widget _buildCarouselIndicator() {
+  return Obx(() {
+    final breakingNews = Controllers.posts.breakingNews;
+    
+    if (breakingNews.isEmpty) return Container();
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: _carouselImages.asMap().entries.map((entry) {
+      children: List.generate(breakingNews.length, (index) {
         return Container(
           width: 8,
           height: 8,
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _currentIndex == entry.key
+            color: _currentIndex.value == index
                 ? Colors.green
                 : Colors.grey.shade300,
           ),
         );
-      }).toList(),
+      }),
     );
-  }
+  });
+}
 
   // Create Post Section
   Widget _buildCreatePostSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ScaleButton(
-        onTap: () {
-          Utils.go(
-            context: context,
-            screen: const CreatePostPage(),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
-          height: 50,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black),
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.grey.shade100,
-          ),
-          child: Row(
-            children: [
-              const Text(
-                'Create a post',
-                style: TextStyle(color: Colors.black54, fontSize: 16),
+  final currentUser = Controllers.auth.currentUser;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: ScaleButton(
+      onTap: () {
+        Utils.go(
+          context: context,
+          screen: const CreatePostPage(),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+        height: 50,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black),
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.grey.shade100,
+        ),
+        child: Row(
+          children: [
+            const Text(
+              'Create a post',
+              style: TextStyle(color: Colors.black54, fontSize: 16),
+            ),
+            const Spacer(),
+            Container(
+              height: 45,
+              width: 45,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: NetworkImage(
+                    currentUser?.photoURL ?? 'https://via.placeholder.com/150',
+                  ),
+                  fit: BoxFit.cover,
+                ),
               ),
-              const Spacer(),
-              Container(
-                height: 45,
-                width: 45,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                      'https://images.unsplash.com/photo-1657306607237-3eab445c4a84?w=400',
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+
+  // Posts Section
+  Widget _buildPosts() {
+    return Obx(() {
+      final posts = Controllers.posts.posts;
+      final isLoading = Controllers.posts.isLoading[FirebasePostController.GET_POSTS] ?? false;
+      
+      if (isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      }
+      
+      if (posts.isEmpty) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
+              "No posts yet. Be the first to share something!",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      }
+      
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: posts.length,
+        itemBuilder: (context, index) {
+          final post = posts[index];
+          return _buildPostItem(post, index);
+        },
+      );
+    });
+  }
+
+  // Individual Post Item
+  Widget _buildPostItem(Map<String, dynamic> post, int index) {
+    final hasImage = post.containsKey('imageUrl') && post['imageUrl'] != null;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade300,
+              blurRadius: 6,
+              spreadRadius: 2,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(
+                  post['authorPhotoURL'] ?? 'https://via.placeholder.com/150',
+                ),
+              ),
+              title: Text(
+                post['authorName'] ?? 'Unknown',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                post['createdAt'] != null 
+                    ? _formatPostDate(post['createdAt'])
+                    : "Recent",
+              ),
+              trailing: _buildPostMenu(post),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                post['description'] ?? '',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            if (hasImage) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 200,
+                child: ScaleButton(
+                  onTap: () {
+                    Controllers.posts.getPostById(post['id']);
+                    Controllers.posts.getCommentsByPostId(post['id']);
+                    Utils.go(
+                      context: context,
+                      screen: SocialPostScreen(
+                        postId: post['id'],
+                        tag: "post_image_${post['id']}",
+                        image: post['imageUrl'],
+                        profileImg: post['authorPhotoURL'] ?? 'https://via.placeholder.com/150',
+                      ),
+                    );
+                  },
+                  child: Hero(
+                    tag: 'post_image_${post['id']}',
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl: post['imageUrl'],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.error),
+                        ),
+                      ),
                     ),
-                    fit: BoxFit.cover,
                   ),
                 ),
               ),
             ],
-          ),
+            _buildPostActions(post),
+          ],
         ),
       ),
     );
   }
 
-  // Posts Section
-  Widget _buildPosts() {
-    // Controllers.profileController.getUser();
-    if (Controllers.postController.posts.isEmpty) {
-      return Center(
-        child: SizedBox(
-          height: 36,
-          width: 36,
-          child: Text("No Posts"),
-        ),
-      );
-    } else
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: Controllers.postController.posts.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade300,
-                    blurRadius: 6,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1657306607237-3eab445c4a84?w=400',
-                      ),
-                    ),
-                    title: Text(
-                      Controllers.profileController
-                                  .isLoading[keys.getProfile] ??
-                              false
-                          ? "--"
-                          : Controllers
-                              .postController.posts[index].author.capitalize!,
-                    ),
-                    subtitle: Text(
-                      Controllers.profileController
-                                  .isLoading[keys.getProfile] ??
-                              false
-                          ? "--"
-                          : DateFormat('y-MM-dd HH:mm').format(
-                              Controllers.postController.posts[index].createdAt,
-                            ),
-                      // 3 days ago
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      Controllers.profileController
-                                  .isLoading[keys.getProfile] ??
-                              false
-                          ? "--"
-                          : Controllers.postController.posts[index].description,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 200,
-                    child: ScaleButton(
-                      onTap: () {
-                        Controllers.postController.getPostById(
-                          Controllers.postController.posts[index].id,
-                        );
-                        Controllers.postController.getCommentsById(
-                          Controllers.postController.posts[index].id,
-                        );
-                        Utils.go(
-                          context: context,
-                          screen: SocialPostScreen(
-                            tag: "post_image_$index.tostrig",
-                            image:
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTCqwlRGS6Xd1cSAO0KqutnKKCpEaU_YPEpsPaZWAPgMBI8cUYJS7IgQiS82Aou65rTm2Q",
-                            profileImg:
-                                "https://images.unsplash.com/photo-1657306607237-3eab445c4a84?w=400",
-                          ),
-                        );
-                      },
-                      child: Hero(
-                        tag: 'post_image_$index',
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                          child: Image.network(
-                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTCqwlRGS6Xd1cSAO0KqutnKKCpEaU_YPEpsPaZWAPgMBI8cUYJS7IgQiS82Aou65rTm2Q',
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.favorite_border_outlined)),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      IconButton(
-                          onPressed: () {}, icon: Icon(Icons.comment_outlined)),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      ScaleButton(
-                        onTap: () {},
-                        child: Image.asset(
-                          "assets/icons/send.png",
-                          height: 40,
-                        ),
-                      )
-                    ],
-                  )
-                ],
-              ),
+  // Post Actions (Like, Comment, Share)
+  Widget _buildPostActions(Map<String, dynamic> post) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          const SizedBox(width: 10),
+          _buildLikeButton(post),
+          const SizedBox(width: 10),
+          IconButton(
+            onPressed: () {
+              Controllers.posts.getPostById(post['id']);
+              Controllers.posts.getCommentsByPostId(post['id']);
+              Utils.go(
+                context: context,
+                screen: SocialPostScreen(
+                  postId: post['id'],
+                  tag: "post_image_${post['id']}",
+                  image: post['imageUrl'] ?? '',
+                  profileImg: post['authorPhotoURL'] ?? 'https://via.placeholder.com/150',
+                ),
+              );
+            },
+            icon: const Icon(Icons.comment_outlined),
+          ),
+          Text(
+            '${post['comments'] ?? 0}',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
             ),
-          );
-        },
-      );
+          ),
+          const SizedBox(width: 10),
+          ScaleButton(
+            onTap: () {
+              _sharePost(post);
+            },
+            child: Image.asset(
+              "assets/icons/send.png",
+              height: 40,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  // Marketplace Content Placeholder
+  // Like Button
+  Widget _buildLikeButton(Map<String, dynamic> post) {
+    return FutureBuilder<bool>(
+      future: Controllers.posts.checkIfLiked(post['id']),
+      builder: (context, snapshot) {
+        final bool isLiked = snapshot.data ?? false;
+        
+        return Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                Controllers.posts.toggleLike(post['id']);
+              },
+              icon: Icon(
+                isLiked ? Icons.favorite : Icons.favorite_border_outlined,
+                color: isLiked ? Colors.red : null,
+              ),
+            ),
+            Text(
+              '${post['likes'] ?? 0}',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Post Options Menu
+  Widget _buildPostMenu(Map<String, dynamic> post) {
+    final currentUser = Controllers.auth.currentUser;
+    final isAuthor = currentUser != null && post['authorId'] == currentUser.uid;
+    
+    if (!isAuthor) return Container();
+    
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (value) {
+        if (value == 'delete') {
+          _showDeleteConfirmation(post);
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: Text('Delete'),
+        ),
+      ],
+    );
+  }
+
+  // Show Delete Confirmation Dialog
+  void _showDeleteConfirmation(Map<String, dynamic> post) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Post'),
+        content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Controllers.posts.deletePost(post['id']);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Share Post
+  void _sharePost(Map<String, dynamic> post) {
+    // Implementation for sharing post
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sharing not implemented yet')),
+    );
+  }
+
+  // Format News Date
+  String _formatNewsDate(dynamic timestamp) {
+    if (timestamp is! Timestamp) return "Recent";
+    
+    final date = timestamp.toDate();
+    final now = DateTime.now();
+    
+    if (now.difference(date).inDays < 1) {
+      return DateFormat('h:mm a').format(date);
+    } else {
+      return DateFormat('MMM d, yyyy').format(date);
+    }
+  }
+
+  // Format Post Date with Timeago
+  String _formatPostDate(dynamic timestamp) {
+    if (timestamp is! Timestamp) return "Recent";
+    
+    final date = timestamp.toDate();
+    return timeago.format(date, locale: 'en_short');
+  }
+
+  // Marketplace Content
   Widget _buildMarketplaceContent() {
     return SingleChildScrollView(
       child: Padding(

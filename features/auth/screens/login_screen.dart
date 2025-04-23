@@ -4,9 +4,9 @@ import 'package:ecomanga/common/buttons/scale_button.dart';
 import 'package:ecomanga/common/widgets/custom_text_field.dart';
 import 'package:ecomanga/controllers/controllers.dart';
 import 'package:ecomanga/features/auth/screens/register_screen.dart';
-
 import 'package:ecomanga/features/home/root_screen.dart';
 import 'package:ecomanga/features/utils/utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -19,18 +19,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _fKey1 = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _email = TextEditingController();
-
   final TextEditingController _password = TextEditingController();
 
-  bool _agreed = false;
+  bool _rememberMe = false;
 
   @override
   void dispose() {
     _email.dispose();
-
     _password.dispose();
     super.dispose();
   }
@@ -43,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
           horizontal: 20.h,
         ),
         child: Form(
-          key: _fKey1,
+          key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -56,8 +54,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   "assets/icons/app_icon.png",
                   height: 120.h,
                   width: 120,
-
-                  // fit: BoxFit.cover,
                 ),
                 _headingText(
                   "Welcome back",
@@ -108,10 +104,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       activeColor: AppColors.buttonColor,
                       focusColor: Colors.indigoAccent,
                       hoverColor: Colors.indigoAccent,
-                      value: _agreed,
+                      value: _rememberMe,
                       onChanged: (_) {
                         setState(() {
-                          _agreed = !_agreed;
+                          _rememberMe = !_rememberMe;
                         });
                       },
                     ),
@@ -123,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const Spacer(),
                     ScaleButton(
-                        onTap: () {},
+                        onTap: () {
+                          _showForgotPasswordDialog(context);
+                        },
                         child: Text(
                           "forgot password?",
                           style: TextStyle(
@@ -137,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 3.h,
                 ),
                 Obx(() {
-                  if (Controllers.loginController.errorMessage.value != "") {
+                  if (Controllers.auth.errorMessage.value != "") {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       showDialog(
                         context: context,
@@ -152,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           content: Text(
-                            Controllers.loginController.errorMessage.value
+                            Controllers.auth.errorMessage.value
                                 .trim(),
                             style: TextStyle(
                               fontSize: 15,
@@ -161,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ).then((_) {
-                        Controllers.loginController.errorMessage.value = "";
+                        Controllers.auth.errorMessage.value = "";
                       });
                     });
                   }
@@ -170,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Sign up",
+                          "Sign in",
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
@@ -178,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         SizedBox(width: 12),
-                        if (Controllers.loginController.isLoading.value)
+                        if (Controllers.auth.isLoading.value)
                           SizedBox(
                             height: 17,
                             width: 17,
@@ -187,95 +185,78 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     onPressed: () async {
-                      await Controllers.loginController.login(
-                        password: _password.text,
-                        email: _email.text,
-                      );
-                      if (Controllers.loginController.authSuccessful.value) {
-                        Utils.go(context: context, screen: const RootScreen());
+                      if (_formKey.currentState!.validate()) {
+                        await Controllers.auth.login(
+                          password: _password.text,
+                          email: _email.text,
+                        );
+                        if (Controllers.auth.authSuccessful.value) {
+                          Utils.go(context: context, screen: const RootScreen(), replace: true);
+                        }
                       }
                     },
-                    isLoading: Controllers.loginController.isLoading.value,
+                    isLoading: Controllers.auth.isLoading.value,
                   );
                 }),
                 SizedBox(
-                  height: 10.h,
+                  height: 15.h,
                 ),
-                ScaleButton(
-                  onTap: () {},
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 5.h,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey,
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          "assets/icons/google.png",
-                          height: 25.h,
-                          fit: BoxFit.cover,
-                        ),
-                        const Spacer(),
-                        Text(
-                          "Sign up with Google",
-                          style: TextStyle(
-                            fontSize: 16.h,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildSeparator("or"),
                 SizedBox(
-                  height: 10.h,
+                  height: 15.h,
                 ),
-                ScaleButton(
-                  onTap: () {},
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 5.h,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey,
+                Obx(() {
+                  return ScaleButton(
+                    onTap: Controllers.auth.isLoading.value
+                        ? null
+                        : () async {
+                            await Controllers.auth.signInWithGoogle();
+                            if (Controllers.auth.authSuccessful.value) {
+                              Utils.go(context: context, screen: const RootScreen(), replace: true);
+                            }
+                          },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 10.h,
                       ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          "assets/icons/facebook.png",
-                          height: 25.h,
-                          fit: BoxFit.cover,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey,
                         ),
-                        const Spacer(),
-                        Text(
-                          "Sign up with Facebook",
-                          style: TextStyle(
-                            fontSize: 16.h,
-                            color: Colors.black,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            "assets/icons/google.png",
+                            height: 25.h,
+                            fit: BoxFit.cover,
                           ),
-                        ),
-                        const Spacer(),
-                      ],
+                          const Spacer(),
+                          Text(
+                            "Sign in with Google",
+                            style: TextStyle(
+                              fontSize: 16.h,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (Controllers.auth.isLoading.value)
+                            SizedBox(
+                              height: 15,
+                              width: 15,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }),
                 SizedBox(
-                  height: 195.h,
+                  height: 50.h,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -301,41 +282,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 SizedBox(
+                  height: 20.h,
+                ),
+                _buildSeparator("or"),
+                SizedBox(
                   height: 10.h,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey,
-                        height: 1.5.h,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 5.h,
-                    ),
-                    _normalText("or"),
-                    SizedBox(
-                      width: 5.h,
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey,
-                        height: 1.5.h,
-                      ),
-                    )
-                  ],
-                ),
-                SizedBox(
-                  height: 5.h,
-                ),
                 ScaleButton(
-                  onTap: () {},
+                  onTap: () {
+                    // Implement guest access with Firebase anonymous sign-in
+                    _signInAsGuest(context);
+                  },
                   child: Container(
                     padding:
-                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.h),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: Colors.green,
@@ -361,6 +321,117 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // Helper method to show forgot password dialog
+  void _showForgotPasswordDialog(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Forgot Password"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Please enter your email address. We'll send you a link to reset your password."),
+            SizedBox(height: 10),
+            CustomTextField(
+              hintText: "Email Address",
+              controller: emailController,
+              iconData: Icons.email,
+              validator: (value) {
+                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                if (value == null || value.isEmpty) {
+                  return 'Please enter an email address';
+                } else if (!emailRegex.hasMatch(value)) {
+                  return 'Please enter a valid email address';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (emailController.text.isNotEmpty) {
+                Navigator.pop(context);
+                await Controllers.auth.resetPassword(emailController.text);
+                
+                // Show success message
+                if (Controllers.auth.errorMessage.value.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Password reset email sent. Please check your inbox."))
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.buttonColor,
+            ),
+            child: Text("Send Reset Link"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for guest sign in
+  void _signInAsGuest(BuildContext context) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(child: CircularProgressIndicator()),
+      );
+      
+      // Sign in anonymously with Firebase
+      await FirebaseAuth.instance.signInAnonymously();
+      
+      // Navigate to home screen
+      Navigator.pop(context); // Close loading dialog
+      Utils.go(context: context, screen: const RootScreen(), replace: true);
+      
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to sign in as guest. Please try again."))
+      );
+    }
+  }
+
+  Widget _buildSeparator(String text) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Divider(
+            color: Colors.grey,
+            height: 1.5.h,
+          ),
+        ),
+        SizedBox(
+          width: 10.h,
+        ),
+        _normalText(text),
+        SizedBox(
+          width: 10.h,
+        ),
+        Expanded(
+          child: Divider(
+            color: Colors.grey,
+            height: 1.5.h,
+          ),
+        )
+      ],
     );
   }
 

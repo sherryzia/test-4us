@@ -2,13 +2,12 @@ import 'package:ecomanga/common/app_colors.dart';
 import 'package:ecomanga/common/buttons/dynamic_button.dart';
 import 'package:ecomanga/common/buttons/scale_button.dart';
 import 'package:ecomanga/common/widgets/custom_text_field.dart';
-import 'package:ecomanga/controllers/auth/auth.dart';
+import 'package:ecomanga/controllers/controllers.dart';
 import 'package:ecomanga/features/auth/screens/login_screen.dart';
 import 'package:ecomanga/features/auth/screens/verify_mail_screen.dart';
 import 'package:ecomanga/features/home/root_screen.dart';
 import 'package:ecomanga/features/utils/utils.dart';
-import 'package:flutter/cupertino.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -21,7 +20,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _fKey1 = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _name = TextEditingController();
@@ -35,21 +34,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phone.dispose();
     _email.dispose();
     _name.dispose();
+    _username.dispose();
     _password.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    GoogleController googleController = Get.find();
-    FacebookController facebookController = Get.find();
     return Scaffold(
       body: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: 20.h,
         ),
         child: Form(
-          key: _fKey1,
+          key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -62,8 +60,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   "assets/icons/app_icon.png",
                   height: 120.h,
                   width: 120,
-
-                  // fit: BoxFit.cover,
                 ),
                 _headingText(
                   "Get Started",
@@ -91,21 +87,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 CustomTextField(
                     hintText: "Username",
                     controller: _username,
-                    autofocus: true,
+                    autofocus: false,
                     removeFocusOutside: true,
                     iconData: Icons.person_2_outlined,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Please enter your username";
                       } else if (value.length < 3) {
-                        return "Name length should be, at leaast, 3 characters";
+                        return "Name length should be, at least, 3 characters";
                       }
                       return null;
                     }),
                 CustomTextField(
                   hintText: "Email Address",
                   controller: _email,
-                  autofocus: true,
+                  autofocus: false,
                   removeFocusOutside: true,
                   iconData: Icons.email,
                   validator: (value) {
@@ -126,9 +122,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   isNumber: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return "phone can not ve null";
+                      return "Phone cannot be null";
                     } else if (value.length != 10) {
-                      return "phone should be of 10 chars";
+                      return "Phone should be of 10 digits";
                     }
                     return null;
                   },
@@ -143,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return "Please enter your password";
                     } else if (value.length < 6) {
-                      return "Password length should be 6 character";
+                      return "Password length should be at least 6 characters";
                     }
                     return null;
                   },
@@ -175,7 +171,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             "By checking the box you agree to our ",
                           ),
                           ScaleButton(
-                            onTap: () {},
+                            onTap: () {
+                              // Show terms and conditions
+                              _showTermsAndConditions(context);
+                            },
                             child: Text(
                               "Terms & Conditions",
                               style: TextStyle(
@@ -196,11 +195,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   height: 20.h,
                 ),
                 Obx(() {
-                  RegisterController controller = Get.find();
-                  if (controller.authSuccessful.value) {
-                    Utils.go(context: context, screen: VerifyEmailScreen());
+                  if (Controllers.auth.authSuccessful.value) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Utils.go(context: context, screen: VerifyEmailScreen());
+                    });
                   }
-                  if (controller.errorMessage.value != "") {
+                  if (Controllers.auth.errorMessage.value != "") {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       showDialog(
                         context: context,
@@ -215,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           content: Text(
-                            controller.errorMessage.value.trim(),
+                            Controllers.auth.errorMessage.value.trim(),
                             style: TextStyle(
                               fontSize: 15,
                               color: Colors.white,
@@ -223,7 +223,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ).then((_) {
-                        controller.errorMessage.value = "";
+                        Controllers.auth.errorMessage.value = "";
                       });
                     });
                   }
@@ -240,7 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         SizedBox(width: 12),
-                        if (controller.isLoading.value)
+                        if (Controllers.auth.isLoading.value)
                           SizedBox(
                             height: 17,
                             width: 17,
@@ -249,71 +249,96 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                     onPressed: () {
-                      controller.register(
-                        _password.text,
-                        _name.text.split(" ")[0],
-                        _name.text.split(" ")[1],
-                        _username.text,
-                        _email.text,
-                        _phone.text,
-                      );
+                      if (!_agreed) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Please agree to the Terms & Conditions"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      if (_formKey.currentState!.validate()) {
+                        // Split full name into first and last name
+                        List<String> nameParts = _name.text.split(" ");
+                        String firstName = nameParts[0];
+                        String lastName = nameParts.length > 1 
+                            ? nameParts.sublist(1).join(" ") 
+                            : "";
+                        
+                        Controllers.auth.register(
+                          email: _email.text,
+                          password: _password.text,
+                          firstName: firstName,
+                          lastName: lastName,
+                          username: _username.text,
+                          phoneNo: _phone.text,
+                        );
+                      }
                     },
-                    isLoading: controller.isLoading.value,
+                    isLoading: Controllers.auth.isLoading.value,
                   );
                 }),
                 SizedBox(
-                  height: 10.h,
+                  height: 15.h,
                 ),
-                SocialLoginButton(
-                  controller: googleController,
-                  icon: "assets/icons/google.png",
-                  text: "Sign up with Google",
-                ),
+                _buildSeparator("or"),
                 SizedBox(
-                  height: 10.h,
+                  height: 15.h,
                 ),
-                SocialLoginButton(
-                  controller: facebookController,
-                  icon: "assets/icons/facebook.png",
-                  text: "Sign up with Facebook",
-                ),
-                // ScaleButton(
-                //   onTap: () {},
-                //   child: Container(
-                //     padding: EdgeInsets.symmetric(
-                //       horizontal: 10.w,
-                //       vertical: 5.h,
-                //     ),
-                //     decoration: BoxDecoration(
-                //       border: Border.all(
-                //         color: Colors.grey,
-                //       ),
-                //       borderRadius: BorderRadius.circular(4),
-                //     ),
-                //     child: Row(
-                //       mainAxisAlignment: MainAxisAlignment.start,
-                //       crossAxisAlignment: CrossAxisAlignment.center,
-                //       children: [
-                //         Image.asset(
-                //           "assets/icons/facebook.png",
-                //           height: 25.h,
-                //           fit: BoxFit.cover,
-                //         ),
-                //         const Spacer(),
-                //         Text(
-                //           "Sign up with Facebook",
-                //           style: TextStyle(
-                //             fontSize: 16.h,
-                //             color: Colors.black,
-                //           ),
-                //         ),
-                //         const Spacer(),
-                //       ],
-                //     ),
-                //   ),
-                // ),
+                Obx(() {
+                  return ScaleButton(
+                    onTap: Controllers.auth.isLoading.value
+                        ? null
+                        : () async {
+                            await Controllers.auth.signInWithGoogle();
+                            if (Controllers.auth.authSuccessful.value) {
+                              Utils.go(context: context, screen: const RootScreen(), replace: true);
+                            }
+                          },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 10.h,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            "assets/icons/google.png",
+                            height: 25.h,
+                            fit: BoxFit.cover,
+                          ),
+                          const Spacer(),
+                          Text(
+                            "Sign up with Google",
+                            style: TextStyle(
+                              fontSize: 16.h,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (Controllers.auth.isLoading.value)
+                            SizedBox(
+                              height: 15,
+                              width: 15,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
                 SizedBox(
-                  height: 70.h,
+                  height: 50.h,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -341,39 +366,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(
                   height: 20.h,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey,
-                        height: 1.5.h,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 5.h,
-                    ),
-                    _normalText("or"),
-                    SizedBox(
-                      width: 5.h,
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey,
-                        height: 1.5.h,
-                      ),
-                    )
-                  ],
-                ),
+                _buildSeparator("or"),
                 SizedBox(
-                  height: 5.h,
+                  height: 10.h,
                 ),
                 ScaleButton(
-                  onTap: () {},
+                  onTap: () {
+                    // Sign in as guest with Firebase anonymous authentication
+                    _signInAsGuest(context);
+                  },
                   child: Container(
                     padding:
-                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.h),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: Colors.green,
@@ -402,6 +406,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _showTermsAndConditions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Terms & Conditions"),
+        content: SingleChildScrollView(
+          child: Text(
+            "By using our application, you agree to abide by our terms and conditions. "
+            "This includes respecting user privacy, providing accurate information, and "
+            "using the platform responsibly.\n\n"
+            "We collect basic user information to provide our services and improve user experience. "
+            "Your personal data will be handled according to our privacy policy.\n\n"
+            "EcoManga reserves the right to modify these terms at any time, with notice provided "
+            "to users through the application or via email.",
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Close"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for guest sign in
+  void _signInAsGuest(BuildContext context) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(child: CircularProgressIndicator()),
+      );
+      
+      // Sign in anonymously with Firebase
+      await FirebaseAuth.instance.signInAnonymously();
+      
+      // Navigate to home screen
+      Navigator.pop(context); // Close loading dialog
+      Utils.go(context: context, screen: const RootScreen(), replace: true);
+      
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to sign in as guest. Please try again."))
+      );
+    }
+  }
+
+  Widget _buildSeparator(String text) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Divider(
+            color: Colors.grey,
+            height: 1.5.h,
+          ),
+        ),
+        SizedBox(
+          width: 10.h,
+        ),
+        _normalText(text),
+        SizedBox(
+          width: 10.h,
+        ),
+        Expanded(
+          child: Divider(
+            color: Colors.grey,
+            height: 1.5.h,
+          ),
+        )
+      ],
+    );
+  }
+
   _headingText(String text) {
     return Text(
       text,
@@ -415,90 +499,5 @@ class _RegisterScreenState extends State<RegisterScreen> {
       text,
       style: TextStyle(fontSize: 14.sp, color: Colors.black),
     );
-  }
-}
-
-class SocialLoginButton extends StatelessWidget {
-  const SocialLoginButton({
-    super.key,
-    required this.controller,
-    required this.icon,
-    required this.text,
-  });
-
-  final controller;
-  final String icon, text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.authSuccessful.value) {
-        Utils.go(context: context, screen: RootScreen());
-      }
-      if (controller.errorMessage.value != "") {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.red[900],
-              title: Text(
-                "Error",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              content: Text(
-                controller.errorMessage.value.trim(),
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ).then((_) {
-            controller.errorMessage.value = "";
-          });
-        });
-      }
-      return ScaleButton(
-        onTap: () {
-          controller.login();
-        },
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 10.w,
-            vertical: 5.h,
-          ),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.grey,
-            ),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Image.asset(
-                icon,
-                height: 25.h,
-                fit: BoxFit.cover,
-              ),
-              const Spacer(),
-              Text(
-                text,
-                style: TextStyle(
-                  fontSize: 16.h,
-                  color: Colors.black,
-                ),
-              ),
-              const Spacer(),
-            ],
-          ),
-        ),
-      );
-    });
   }
 }

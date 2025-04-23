@@ -2,10 +2,17 @@ import 'package:ecomanga/controllers/controllers.dart';
 import 'package:ecomanga/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  initControllers();
+  
+  // Initialize Firebase before anything else
+  await Firebase.initializeApp();
+  
+  // Initialize controllers after Firebase
+  await initControllers();
+  
   runApp(const MyApp());
 }
 
