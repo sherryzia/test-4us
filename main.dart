@@ -1,40 +1,33 @@
-import 'package:ecomanga/controllers/controllers.dart';
-import 'package:ecomanga/splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:get/get.dart';
+import 'package:restaurant_finder/config/appConfigs.dart';
+import 'package:restaurant_finder/controller/global_controller.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase before anything else
-  await Firebase.initializeApp();
-  
-  // Initialize controllers after Firebase
-  await initControllers();
-  
-  runApp(const MyApp());
+import 'config/routes/routes.dart';
+import 'config/theme/light_theme.dart';
+
+void main() {
+  AppConfigs.initializeSupabase();
+  Get.put(GlobalController());
+  runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+//DO NOT REMOVE Unless you find their usage.
+String dummyImg =
+    'https://images.unsplash.com/photo-1647109063447-e01ab743ee8f?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-        designSize: const Size(430, 932),
-        minTextAdapt: true,
-        splitScreenMode: true,
-        builder: (context, _) {
-          return MaterialApp(
-            title: 'Flutter Demo',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-              useMaterial3: true,
-            ),
-            home: const SplashScreen(),
-            debugShowCheckedModeBanner: true,
-          );
-        });
+    return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      debugShowMaterialGrid: false,
+      title: 'TITLE',
+      theme: lightTheme,
+      themeMode: ThemeMode.light,
+      initialRoute: AppLinks.splash_screen,
+      getPages: AppRoutes.pages,
+      defaultTransition: Transition.fadeIn,
+    );
   }
 }
