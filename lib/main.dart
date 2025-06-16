@@ -1,37 +1,57 @@
+// lib/main.dart
+
+import 'package:betting_app/bindings/app_bindings.dart';
+import 'package:betting_app/view/screens/auth/signin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import 'config/routes/routes.dart';
 import 'config/theme/light_theme.dart';
+import 'services/auth_service.dart';
+import 'view/screens/bottom_nav_bar/bottom_nav_bar.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
-
-const String dummyImage2 =
-    'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
-const String dummyImage =
-    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+        Get.put(AuthService(), permanent: true);
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       debugShowMaterialGrid: false,
-      title: 'Betting App',
+      title: 'BetVault',
       theme: lightTheme,
-
       themeMode: ThemeMode.light,
-      initialRoute: AppLinks.splash_screen,
-      defaultTransition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 500),
-      getPages: AppRoutes.pages,
+      initialBinding: AppBinding(),
+      home: FutureBuilder(
+        future: Get.find<AuthService>().loadFromStorage(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Obx(() {
+              final authService = Get.find<AuthService>();
+              return authService.isLoggedIn.value 
+                ? BottomNavBar() 
+                : LoginScreen();
+            });
+          }
+          
+          // Loading state while checking auth
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+      ),
     );
   }
 }

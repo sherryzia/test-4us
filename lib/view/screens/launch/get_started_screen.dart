@@ -50,7 +50,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                 height: 37,
                 radius: 30,
                 onTap: (){
-                  Get.to(() => const SigninScreen());
+                  Get.to(() =>  LoginScreen());
                 },
                 buttonText: "",
                 child: Padding(
@@ -202,7 +202,7 @@ class SwiperPayment extends StatelessWidget {
                     width: 160,
                     child: MyButton(
                       onTap: () {
-                        Get.to(() => const SignupScreen());
+                        Get.to(() =>  SignupScreen());
                       },
                       buttonText: "Purchase",
                       backgroundColor: kQuaternaryColor,

@@ -130,7 +130,7 @@ class SwiperPaymentPlan extends StatelessWidget {
                     width: 160,
                     child: MyButton(
                       onTap: () {
-                        Get.to(() => const SignupScreen());
+                        Get.to(() =>  SignupScreen());
                       },
                       buttonText: "Purchase",
                       backgroundColor: kQuaternaryColor,
