@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:betting_app/generated/assets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -26,7 +27,7 @@ class CommonImageView extends StatelessWidget {
     this.width,
     this.radius = 0.0,
     this.fit = BoxFit.cover,
-    this.placeHolder = 'assets/images/no_image_found.png',
+    this.placeHolder = Assets.imagesProfile,
   });
 
   @override

@@ -1,6 +1,7 @@
 // lib/view/screens/home/home_screen.dart
 
 import 'package:betting_app/constants/app_sizes.dart';
+import 'package:betting_app/controllers/global_controller.dart';
 import 'package:betting_app/controllers/ticket_controller.dart';
 import 'package:betting_app/services/auth_service.dart';
 import 'package:betting_app/view/screens/favourite/favourite_screen.dart';
@@ -35,7 +36,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _ticketController.fetchTickets();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authService = Get.find<AuthService>();
+      if (authService.isLoggedIn.value) {
+        _ticketController.fetchTickets();
+      }
+    });
   }
 
   @override
@@ -94,23 +101,34 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        
-actions: [
-  Obx(() {
-    final userData = Get.find<AuthService>().user.value;
-    return userData['profile_image'] != null
-      ? CommonImageView(
-          url: userData['profile_image'],
-          height: 40,
-          radius: 20,
-        )
-      : CommonImageView(
-          imagePath: Assets.imagesProfile,
-          height: 40,
-        );
-  }),
-  const SizedBox(width: 22),
-],
+        actions: [
+          Obx(() {
+            final userController = Get.find<UserController>();
+            return userController.hasProfileImage
+                ? CommonImageView(
+                    url: userController.profileImageUrl.value,
+                    height: 40,
+                    radius: 20,
+                  )
+                : Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: kSecondaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: MyText(
+                        text: userController.initials,
+                        size: 16,
+                        weight: FontWeight.bold,
+                        color: kPrimaryColor,
+                      ),
+                    ),
+                  );
+          }),
+          const SizedBox(width: 22),
+        ],
       ),
       body: Obx(() {
         return _ticketController.isLoading.value &&
@@ -119,42 +137,39 @@ actions: [
             : ListView(
                 children: [
                   Container(
-  padding: AppSizes.DEFAULT,
-  decoration: const BoxDecoration(
-    color: kBlackColor,
-    borderRadius: BorderRadius.vertical(
-      bottom: Radius.circular(15),
-    )
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Align(
-        alignment: Alignment.topLeft,
-        child: MyText(
-          text: "Welcome Back!",
-          size: 12,
-          weight: FontWeight.w400,
-          color: kPrimaryColor,
-        ),
-      ),
-      // Use Obx to reactively display the user's name
-      Obx(() {
-        final userData = Get.find<AuthService>().user.value;
-        final firstName = userData['first_name'] ?? '';
-        final lastName = userData['last_name'] ?? '';
-        final fullName = "$firstName $lastName".trim();
-        
-        return MyText(
-          text: fullName.isNotEmpty ? fullName : "User",
-          size: 17,
-          weight: FontWeight.w700,
-          color: kQuaternaryColor,
-        );
-      }),
-    ],
-  ),
-),
+                    padding: AppSizes.DEFAULT,
+                    decoration: const BoxDecoration(
+                        color: kBlackColor,
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(15),
+                        )),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: MyText(
+                            text: "Welcome Back!",
+                            size: 12,
+                            weight: FontWeight.w400,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                        // Use Obx to reactively display the user's name
+                        Obx(() {
+                          final userController = Get.find<UserController>();
+                          return MyText(
+                            text: userController.fullName.value.isNotEmpty
+                                ? userController.fullName.value
+                                : "User",
+                            size: 17,
+                            weight: FontWeight.w700,
+                            color: kQuaternaryColor,
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
 
 // Also update the profile image in the app bar
                   const SizedBox(

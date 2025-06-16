@@ -32,26 +32,21 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       themeMode: ThemeMode.light,
       initialBinding: AppBinding(),
-      home: FutureBuilder(
-        future: Get.find<AuthService>().loadFromStorage(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return Obx(() {
-              final authService = Get.find<AuthService>();
-              return authService.isLoggedIn.value 
-                ? BottomNavBar() 
-                : LoginScreen();
-            });
-          }
-          
-          // Loading state while checking auth
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-      ),
+      // In main.dart
+home: FutureBuilder<bool>(
+  future: Get.find<AuthService>().loadFromStorage(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
+    // Check if user is authenticated based on actual result
+    final isAuthenticated = snapshot.data ?? false;
+    return isAuthenticated ? BottomNavBar() : LoginScreen();
+  }
+)
     );
   }
 }

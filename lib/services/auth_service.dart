@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:betting_app/controllers/global_controller.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,29 +22,72 @@ class AuthService extends GetxService {
     loadFromStorage();
   }
   
+  // Helper method to update UserController directly
+  void _updateUserController(Map<String, dynamic> userData) {
+    try {
+      // Check if UserController exists and update it directly
+      if (Get.isRegistered<UserController>()) {
+        final userController = Get.find<UserController>();
+        userController.updateUserData(userData);
+        print("🔄 UserController updated directly from AuthService");
+      }
+    } catch (e) {
+      print("⚠️ UserController not found or error updating: $e");
+    }
+  }
+  
   // Load user data and token from storage
-  Future<void> loadFromStorage() async {
+  Future<bool> loadFromStorage() async {
+    print("🔍 Loading from storage...");
+    
     final prefs = await SharedPreferences.getInstance();
     
     // Load token
     final storedToken = prefs.getString(_tokenKey);
+    print("📱 Stored token: ${storedToken?.substring(0, 20)}...");
+    
     if (storedToken != null && storedToken.isNotEmpty) {
+      // Set token first
       token.value = storedToken;
-      isLoggedIn.value = true;
-      
-      // Update DioUtil with token
       DioUtil.updateToken(storedToken);
+      print("🔑 Token set in DioUtil");
+      
+      // Add a small delay to ensure token is properly set
+      await Future.delayed(Duration(milliseconds: 100));
+      
+      // Validate token
+      try {
+        print("🔍 Validating token...");
+        final response = await DioUtil.dio.get('/api/user');
+        print("✅ Token validation response: ${response.statusCode}");
+        
+        if (response.statusCode == 200) {
+          // Load and update user data from response
+          if (response.data != null) {
+            user.value = response.data;
+            // Also save updated user data to storage
+            await prefs.setString(_userKey, json.encode(response.data));
+            print("👤 User data loaded: ${user.value['email']}");
+            
+            // 🔥 DIRECTLY UPDATE USER CONTROLLER
+            _updateUserController(response.data);
+          }
+          
+          isLoggedIn.value = true;
+          print("🎉 Authentication successful");
+          return true;
+        }
+      } catch (e) {
+        print("❌ Token validation failed: $e");
+        await clearStorage();
+      }
+    } else {
+      print("❌ No stored token found");
     }
     
-    // Load user data
-    final storedUser = prefs.getString(_userKey);
-    if (storedUser != null && storedUser.isNotEmpty) {
-      try {
-        user.value = json.decode(storedUser) as Map<String, dynamic>;
-      } catch (e) {
-        print("Error parsing stored user data: $e");
-      }
-    }
+    isLoggedIn.value = false;
+    print("🚫 User not authenticated");
+    return false;
   }
   
   // Save data to storage
@@ -59,10 +103,16 @@ class AuthService extends GetxService {
       DioUtil.updateToken(newToken);
     }
     
-    // Save user data
+    // Save user data and trigger reactive update
     if (userData != null) {
       await prefs.setString(_userKey, json.encode(userData));
-      user.value = userData;
+      
+      // Update AuthService user data
+      user.value = Map<String, dynamic>.from(userData);
+      print("💾 User data saved and updated reactively: ${userData['email']}");
+      
+      // 🔥 DIRECTLY UPDATE USER CONTROLLER
+      _updateUserController(userData);
     }
     
     isLoggedIn.value = true;
@@ -80,6 +130,17 @@ class AuthService extends GetxService {
     
     // Clear token from DioUtil
     DioUtil.clearToken();
+    
+    // 🔥 CLEAR USER CONTROLLER DATA
+    try {
+      if (Get.isRegistered<UserController>()) {
+        final userController = Get.find<UserController>();
+        userController.clearUserData();
+        print("🚫 UserController cleared directly from AuthService");
+      }
+    } catch (e) {
+      print("⚠️ Error clearing UserController: $e");
+    }
   }
   
   // Login
@@ -192,7 +253,7 @@ class AuthService extends GetxService {
           'data': response.data
         };
       }
-    } on dio. DioException catch (e) {
+    } on dio.DioException catch (e) {
       return _handleDioError(e, 'Registration failed');
     } catch (e) {
       return {
@@ -204,176 +265,187 @@ class AuthService extends GetxService {
   }
   
   // Logout
-  // lib/services/auth_service.dart
-
-// Update the logout method to call the API
-Future<Map<String, dynamic>> logout() async {
-  try {
-    // Make API call to logout
-    var response = await DioUtil.dio.request(
-      '/api/user/logout',
-      options: dio.Options(
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'x-api-key': '',
-        },
-      ),
-    );
-    
-    // Clear local storage regardless of API response
-    await clearStorage();
-    
-    if (response.statusCode == 200) {
-      return {
-        'success': true,
-        'message': 'Logout successful',
-        'data': response.data
-      };
-    } else {
-      return {
-        'success': false,
-        'message': response.data['message'] ?? 'Logout failed',
-        'data': response.data
-      };
-    }
-  } catch (e) {
-    print("Error during logout: $e");
-    // Still clear storage even if API call fails
-    await clearStorage();
-    
-    return {
-      'success': true,
-      'message': 'Logged out locally',
-      'data': null
-    };
-  }
-}
-
-  Future<Map<String, dynamic>> updateUserProfile(Map<String, dynamic> userData) async {
-  try {
-    var formData = dio.FormData();
-
-    // Add fields if provided
-    if (userData['first_name'] != null) {
-      formData.fields.add(MapEntry('first_name', userData['first_name']));
-    }
-    if (userData['last_name'] != null) {
-      formData.fields.add(MapEntry('last_name', userData['last_name']));
-    }
-    if (userData['phone'] != null) {
-      formData.fields.add(MapEntry('phone', userData['phone']));
-    }
-    if (userData['email'] != null) {
-      formData.fields.add(MapEntry('email', userData['email']));
-    }
-
-    // Add profile image if provided
-    if (userData['profile_image'] != null) {
-      File imageFile = userData['profile_image'];
-      formData.files.add(
-        MapEntry(
-          'files',
-          await dio.MultipartFile.fromFile(
-            imageFile.path,
-            filename: imageFile.path.split('/').last
-          )
-        )
+  Future<Map<String, dynamic>> logout() async {
+    try {
+      // Make API call to logout
+      var response = await DioUtil.dio.request(
+        '/api/user/logout',
+        options: dio.Options(
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'x-api-key': '',
+          },
+        ),
       );
-    }
-
-    var response = await DioUtil.dio.request(
-      '/api/user',
-      options: dio.Options(
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
-      data: formData,
-    );
-    
-    if (response.statusCode == 200) {
-      // Update local user data
-      if (response.data['user'] != null) {
-        await saveToStorage(userData: response.data['user']);
-      }
       
-      return {
-        'success': true,
-        'message': 'Profile updated successfully',
-        'data': response.data
-      };
-    } else {
-      return {
-        'success': false,
-        'message': response.data['message'] ?? 'Failed to update profile',
-        'data': response.data
-      };
-    }
-  } on dio.DioException catch (e) {
-    return _handleDioError(e, 'Failed to update profile');
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'An unexpected error occurred: ${e.toString()}',
-      'data': null
-    };
-  }
-}
-
-// Delete user account
-Future<Map<String, dynamic>> deleteAccount(String password) async {
-  try {
-    var data = json.encode({
-      "password": password,
-      "confirm_deletion": true
-    });
-    
-    var response = await DioUtil.dio.request(
-      '/api/user/delete',
-      options: dio.Options(
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
-      data: data,
-    );
-    
-    if (response.statusCode == 200) {
-      // Clear local storage
+      // Clear local storage regardless of API response
+      await clearStorage();
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': 'Logout successful',
+          'data': response.data
+        };
+      } else {
+        return {
+          'success': false,
+          'message': response.data['message'] ?? 'Logout failed',
+          'data': response.data
+        };
+      }
+    } catch (e) {
+      print("Error during logout: $e");
+      // Still clear storage even if API call fails
       await clearStorage();
       
       return {
         'success': true,
-        'message': 'Account deleted successfully',
-        'data': response.data
-      };
-    } else {
-      return {
-        'success': false,
-        'message': response.data['message'] ?? 'Failed to delete account',
-        'data': response.data
+        'message': 'Logged out locally',
+        'data': null
       };
     }
-  } on dio.DioException catch (e) {
-    return _handleDioError(e, 'Failed to delete account');
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'An unexpected error occurred: ${e.toString()}',
-      'data': null
-    };
   }
-}
 
-// Get current user data
-Map<String, dynamic> getUserData() {
-  return user.value;
-}
+  // Update user profile - THE CRITICAL METHOD
+  Future<Map<String, dynamic>> updateUserProfile(Map<String, dynamic> userData) async {
+    try {
+      var formData = dio.FormData();
+
+      // Add fields if provided
+      if (userData['first_name'] != null) {
+        formData.fields.add(MapEntry('first_name', userData['first_name']));
+      }
+      if (userData['last_name'] != null) {
+        formData.fields.add(MapEntry('last_name', userData['last_name']));
+      }
+      if (userData['phone'] != null) {
+        formData.fields.add(MapEntry('phone', userData['phone']));
+      }
+      if (userData['email'] != null) {
+        formData.fields.add(MapEntry('email', userData['email']));
+      }
+
+      // Add profile image if provided
+      if (userData['profile_image'] != null) {
+        File imageFile = userData['profile_image'];
+        formData.files.add(
+          MapEntry(
+            'files',
+            await dio.MultipartFile.fromFile(
+              imageFile.path,
+              filename: imageFile.path.split('/').last
+            )
+          )
+        );
+      }
+
+      var response = await DioUtil.dio.request(
+        '/api/user',
+        options: dio.Options(
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+        data: formData,
+      );
+      
+      if (response.statusCode == 200) {
+        // 🔥 CRITICAL: Update local user data properly
+        if (response.data['user'] != null) {
+          print("✅ Profile update successful, updating local data");
+          
+          // Force reactive update by creating new map
+          final updatedUserData = Map<String, dynamic>.from(response.data['user']);
+          
+          // Save to storage and trigger reactive updates
+          await saveToStorage(userData: updatedUserData);
+          
+          // 🔥 DOUBLE CHECK: Force update UserController again
+          await Future.delayed(Duration(milliseconds: 100));
+          _updateUserController(updatedUserData);
+          
+          print("🔄 Local user data updated: ${updatedUserData['email']}");
+        }
+        
+        return {
+          'success': true,
+          'message': 'Profile updated successfully',
+          'data': response.data
+        };
+      } else {
+        return {
+          'success': false,
+          'message': response.data['message'] ?? 'Failed to update profile',
+          'data': response.data
+        };
+      }
+    } on dio.DioException catch (e) {
+      return _handleDioError(e, 'Failed to update profile');
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'An unexpected error occurred: ${e.toString()}',
+        'data': null
+      };
+    }
+  }
+
+  // Delete user account
+  Future<Map<String, dynamic>> deleteAccount(String password) async {
+    try {
+      var data = json.encode({
+        "password": password,
+        "confirm_deletion": true
+      });
+      
+      var response = await DioUtil.dio.request(
+        '/api/user/delete',
+        options: dio.Options(
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        data: data,
+      );
+      
+      if (response.statusCode == 200) {
+        // Clear local storage
+        await clearStorage();
+        
+        return {
+          'success': true,
+          'message': 'Account deleted successfully',
+          'data': response.data
+        };
+      } else {
+        return {
+          'success': false,
+          'message': response.data['message'] ?? 'Failed to delete account',
+          'data': response.data
+        };
+      }
+    } on dio.DioException catch (e) {
+      return _handleDioError(e, 'Failed to delete account');
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'An unexpected error occurred: ${e.toString()}',
+        'data': null
+      };
+    }
+  }
+
+  // Get current user data
+  Map<String, dynamic> getUserData() {
+    return user.value;
+  }
+  
   // Helper method to handle Dio errors
   Map<String, dynamic> _handleDioError(dio.DioException e, String defaultMessage) {
     if (e.response != null) {

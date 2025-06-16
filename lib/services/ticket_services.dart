@@ -1,6 +1,7 @@
 // lib/services/ticket_service.dart
 
 import 'dart:io';
+import 'package:betting_app/services/auth_service.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
 import 'package:betting_app/utils/dio_util.dart';
@@ -36,7 +37,7 @@ Future<Map<String, dynamic>> uploadTicket(File imageFile, {int? ticketId}) async
         contentType: 'multipart/form-data',
         headers: {
           'Accept': 'application/json',
-          'Authorization': 'Bearer 10|M4PvBBtl7vpO5wpHg2RIW1yeMEKV5p72OmLdBMmi01fcad19',
+          'Authorization': 'Bearer ${Get.find<AuthService>().token}',
         },
       ),
     );

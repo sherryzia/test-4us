@@ -1,6 +1,7 @@
 // lib/controllers/ticket_controller.dart
 
 import 'dart:io';
+import 'package:betting_app/services/auth_service.dart';
 import 'package:betting_app/services/ticket_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -23,13 +24,32 @@ class TicketController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchTickets();
+    // fetchTickets();
+    _setupAuthListener();
   }
   // lib/controllers/ticket_controller.dart
 void refreshControllerOnUserUpdate() {
   // Make sure to call this when needed
   update();
 }
+
+
+
+ void _setupAuthListener() {
+    // Only fetch tickets when user is authenticated
+    ever(Get.find<AuthService>().isLoggedIn, (bool isLoggedIn) {
+      if (isLoggedIn) {
+        print("🎯 User authenticated, fetching tickets...");
+        fetchTickets();
+      } else {
+        print("🚫 User not authenticated, clearing tickets...");
+        tickets.clear();
+        favoriteTickets.clear();
+        historyTickets.clear();
+      }
+    });
+  }
+  
 // Update the uploadTicket method to handle ticket ID
 Future<void> uploadTicket(File imageFile, {int? ticketId}) async {
   try {
