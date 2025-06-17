@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Expensary',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
 
       ),

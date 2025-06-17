@@ -1,6 +1,7 @@
 // views/screens/home_content.dart
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/home_controller.dart';
+import 'package:expensary/models/expense_item_model.dart';
 import 'package:expensary/views/widgets/balance_circle_painter.dart';
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:flutter/material.dart';
@@ -121,8 +122,7 @@ class HomeContent extends StatelessWidget {
                     
                     const SizedBox(height: 20),
                     
-                    // Add Button
-                    _buildAddButton(controller),
+                   
                     
                     const SizedBox(height: 20),
                   ],
@@ -226,26 +226,6 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  Widget _buildAddButton(HomeController controller) {
-    return Center(
-      child: GestureDetector(
-        onTap: controller.addExpense,
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: kpurple,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.add,
-            color: kwhite,
-            size: 28,
-          ),
-        ),
-      ),
-    );
-  }
   
   Widget _buildExpenseItem(ExpenseItem expense) {
     IconData iconData = _getIconData(expense.iconData);

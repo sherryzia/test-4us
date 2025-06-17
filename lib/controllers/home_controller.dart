@@ -1,4 +1,6 @@
+
 // Updated controllers/home_controller.dart
+import 'package:expensary/models/expense_item_model.dart';
 import 'package:expensary/views/screens/add_expense_screen.dart';
 import 'package:get/get.dart';
 
@@ -16,28 +18,42 @@ class HomeController extends GetxController {
   final RxString tipTitle = 'Prepare a Budget and Abide by it'.obs;
   final RxDouble tipProgress = 0.4.obs;
   
-  // Sample expenses data
+  // Sample expenses data with brand icons
   final RxList<ExpenseItem> expenses = <ExpenseItem>[
     ExpenseItem(
-      title: 'Nike Air Max 2090',
-      date: '09 Oct 2023',
-      amount: -16999,
-      iconData: 'sports_basketball',
+      title: 'Amazon',
+      date: 'Sept 09, 2022',
+      amount: -89.54,
+      iconData: 'amazon',
+      iconBg: 'white',
+    ),
+    ExpenseItem(
+      title: 'McDonalds',
+      date: 'Sept 12, 2022',
+      amount: -32.67,
+      iconData: 'mcdonalds',
       iconBg: 'white',
     ),
     ExpenseItem(
       title: 'iPad Pro',
-      date: '10 Oct 2023',
+      date: 'Oct 10, 2023',
       amount: -79999,
       iconData: 'apple',
-      iconBg: 'black',
+      iconBg: 'white',
     ),
     ExpenseItem(
-      title: 'Uber',
-      date: '5 Mar 2023',
-      amount: 50,
-      iconData: 'local_taxi',
-      iconBg: 'black',
+      title: 'Starbucks',
+      date: 'Sept 04, 2022',
+      amount: -199.54,
+      iconData: 'starbucks',
+      iconBg: 'white',
+    ),
+    ExpenseItem(
+      title: 'Mastercard',
+      date: 'Sept 09, 2022',
+      amount: -1130.54,
+      iconData: 'mastercard',
+      iconBg: 'white',
     ),
   ].obs;
   
@@ -79,44 +95,5 @@ class HomeController extends GetxController {
       // If it's income, add to available balance
       availableBalance.value += expense.amount;
     }
-  }
-}
-
-// Keep the ExpenseItem model here for now, but ideally move to models folder
-class ExpenseItem {
-  final String title;
-  final String date;
-  final double amount;
-  final String iconData;
-  final String iconBg;
-  
-  ExpenseItem({
-    required this.title,
-    required this.date,
-    required this.amount,
-    required this.iconData,
-    required this.iconBg,
-  });
-  
-  // Convert to JSON (for API calls)
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'date': date,
-      'amount': amount,
-      'iconData': iconData,
-      'iconBg': iconBg,
-    };
-  }
-  
-  // Create from JSON (for API responses)
-  factory ExpenseItem.fromJson(Map<String, dynamic> json) {
-    return ExpenseItem(
-      title: json['title'] ?? '',
-      date: json['date'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      iconData: json['iconData'] ?? 'shopping_bag',
-      iconBg: json['iconBg'] ?? 'black',
-    );
   }
 }

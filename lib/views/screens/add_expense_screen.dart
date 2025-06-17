@@ -1,4 +1,4 @@
-// views/screens/add_expense_screen.dart
+// Updated views/screens/add_expense_screen.dart
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/add_expense_controller.dart';
 import 'package:expensary/views/widgets/my_text.dart';
@@ -215,6 +215,57 @@ class AddExpenseScreen extends StatelessWidget {
                         
                         const SizedBox(height: 24),
                         
+                        // Added Merchant/Title Field
+                        _buildEnhancedSection(
+                          title: 'MERCHANT',
+                          icon: Icons.store,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: kwhite.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: kwhite.withOpacity(0.1),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Icon(
+                                    Icons.storefront,
+                                    color: korange,
+                                    size: 24,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: controller.titleController,
+                                    keyboardType: TextInputType.text,
+                                    style: TextStyle(
+                                      color: kwhite,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter merchant name',
+                                      hintStyle: TextStyle(
+                                        color: kwhite.withOpacity(0.6),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
                         // Enhanced Category Section
                         _buildEnhancedSection(
                           title: 'CATEGORY',
@@ -311,64 +362,20 @@ class AddExpenseScreen extends StatelessWidget {
                         
                         const SizedBox(height: 50),
                         
-                        // Enhanced Save Button
-                        TweenAnimationBuilder(
-                          duration: Duration(milliseconds: 800),
-                          tween: Tween<double>(begin: 0, end: 1),
-                          builder: (context, double value, child) {
-                            return Transform.scale(
-                              scale: 0.8 + (0.2 * value),
-                              child: Opacity(
-                                opacity: value,
-                                child: GestureDetector(
-                                  onTap: controller.saveExpense,
-                                  child: Container(
-                                    width: 90,
-                                    height: 90,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF8E2DE2),
-                                          Color(0xFF4A00E0),
-                                          Color(0xFF6A1B9A),
-                                        ],
-                                      ),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Color(0xFF8E2DE2).withOpacity(0.4),
-                                          blurRadius: 25,
-                                          offset: Offset(0, 15),
-                                          spreadRadius: 2,
-                                        ),
-                                        BoxShadow(
-                                          color: Color(0xFF4A00E0).withOpacity(0.3),
-                                          blurRadius: 15,
-                                          offset: Offset(0, 8),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: kwhite.withOpacity(0.2),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        Icons.add,
-                                        color: kwhite,
-                                        size: 45,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                        // Updated Save Button
+                        MyButton(
+                          onTap: controller.saveExpense,
+                          buttonText: 'Save Expense',
+                          width: 200,
+                          height: 56,
+                          fillColor: Color(0xFF8E2DE2),
+                          fontColor: kwhite,
+                          fontSize: 18,
+                          radius: 28,
+                          hasgrad: true,
+                          fontWeight: FontWeight.w600,
+                          icon: Icons.save,
+                          iconPosition: IconPosition.left,
                         ),
                         
                         const SizedBox(height: 50),
@@ -486,7 +493,7 @@ class AddExpenseScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
-            ),
+            ),// Continued from previous artifact
             child: Icon(
               icon,
               color: color,

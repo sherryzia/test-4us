@@ -1,12 +1,16 @@
-// controllers/add_expense_controller.dart
+// Updated controllers/add_expense_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:expensary/controllers/home_controller.dart';
+import 'package:expensary/models/expense_item_model.dart';
+import 'package:intl/intl.dart';
 
 class AddExpenseController extends GetxController {
   // Form controllers
   final timeController = TextEditingController();
   final dateController = TextEditingController();
   final amountController = TextEditingController();
+  final titleController = TextEditingController(); // Added for expense title/merchant
   
   // Observable variables
   final RxString selectedCategory = 'Electronics'.obs;
@@ -43,8 +47,68 @@ class AddExpenseController extends GetxController {
     'UPI',
     'Net Banking',
     'Digital Wallet',
-    'Cheque'
+    'Mastercard',
+    'Visa'
   ];
+  
+  // Map of merchants with their brand logos (iconData placeholders)
+  final Map<String, Map<String, dynamic>> knownMerchants = {
+    'Amazon': {
+      'icon': 'amazon',
+      'category': 'Shopping',
+      'bgColor': 'white',
+    },
+    'McDonalds': {
+      'icon': 'mcdonalds',
+      'category': 'Food & Dining',
+      'bgColor': 'white',
+    },
+    'Apple': {
+      'icon': 'apple',
+      'category': 'Electronics',
+      'bgColor': 'white',
+    },
+    'iPad Pro': {
+      'icon': 'apple',
+      'category': 'Electronics',
+      'bgColor': 'white',
+    },
+    'iPhone': {
+      'icon': 'apple',
+      'category': 'Electronics',
+      'bgColor': 'white',
+    },
+    'Starbucks': {
+      'icon': 'starbucks',
+      'category': 'Food & Dining',
+      'bgColor': 'white',
+    },
+    'Uber': {
+      'icon': 'uber',
+      'category': 'Transportation',
+      'bgColor': 'black',
+    },
+    'Spotify': {
+      'icon': 'spotify',
+      'category': 'Entertainment',
+      'bgColor': 'black',
+    },
+    'Netflix': {
+      'icon': 'netflix',
+      'category': 'Entertainment',
+      'bgColor': 'black',
+    },
+    'Mastercard': {
+      'icon': 'mastercard',
+      'category': 'Bills & Utilities',
+      'bgColor': 'white',
+    },
+    'Visa': {
+      'icon': 'visa',
+      'category': 'Bills & Utilities',
+      'bgColor': 'white',
+    },
+  };
   
   @override
   void onInit() {
@@ -57,6 +121,7 @@ class AddExpenseController extends GetxController {
     timeController.dispose();
     dateController.dispose();
     amountController.dispose();
+    titleController.dispose();
     super.onClose();
   }
   
@@ -136,14 +201,15 @@ class AddExpenseController extends GetxController {
   bool isFormValid() {
     return amountController.text.isNotEmpty && 
            double.tryParse(amountController.text) != null &&
-           double.parse(amountController.text) > 0;
+           double.parse(amountController.text) > 0 &&
+           titleController.text.isNotEmpty;
   }
   
   void saveExpense() {
     if (!isFormValid()) {
       Get.snackbar(
         'Invalid Input',
-        'Please enter a valid amount',
+        'Please enter a valid amount and merchant name',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
@@ -151,18 +217,76 @@ class AddExpenseController extends GetxController {
       return;
     }
     
-    // Create expense object
-    final expense = {
-      'amount': double.parse(amountController.text),
-      'category': selectedCategory.value,
-      'currency': selectedCurrency.value,
-      'paymentMethod': selectedPaymentMethod.value,
-      'dateTime': selectedDateTime.value,
-      'timestamp': DateTime.now(),
-    };
+    // Get formatted date for display
+    final DateFormat formatter = DateFormat('MMM dd, yyyy');
+    final String formattedDate = formatter.format(selectedDateTime.value);
     
-    // Here you would typically save to database or send to API
-    print('Saving expense: $expense');
+    // Format title/merchant name
+    final String merchantName = titleController.text.trim();
+    
+    // Determine icon and background
+    String iconData = 'shopping_bag'; // Default icon
+    String iconBg = 'black';         // Default background
+    
+    // Check if this is a known merchant
+    if (knownMerchants.containsKey(merchantName)) {
+      iconData = knownMerchants[merchantName]!['icon']!;
+      iconBg = knownMerchants[merchantName]!['bgColor']!;
+      
+      // Set category if from known merchant
+      if (selectedCategory.value == 'Electronics') {
+        selectedCategory.value = knownMerchants[merchantName]!['category']!;
+      }
+    } else {
+      // Set icon based on category
+      switch (selectedCategory.value) {
+        case 'Food & Dining':
+          iconData = 'restaurant';
+          break;
+        case 'Transportation':
+          iconData = 'local_taxi';
+          break;
+        case 'Electronics':
+          iconData = 'devices';
+          break;
+        case 'Shopping':
+          iconData = 'shopping_bag';
+          break;
+        case 'Entertainment':
+          iconData = 'movie';
+          break;
+        case 'Health & Medical':
+          iconData = 'medical_services';
+          break;
+        case 'Bills & Utilities':
+          iconData = 'receipt';
+          break;
+        case 'Education':
+          iconData = 'school';
+          break;
+        case 'Travel':
+          iconData = 'flight';
+          break;
+        default:
+          iconData = 'shopping_bag';
+      }
+    }
+    
+    // Parse amount (negative for expenses)
+    double amount = -double.parse(amountController.text);
+    
+    // Create expense object
+    final ExpenseItem expenseItem = ExpenseItem(
+      title: merchantName,
+      date: formattedDate,
+      amount: amount, // Negative for expenses
+      iconData: iconData,
+      iconBg: iconBg,
+    );
+    
+    // Add to HomeController
+    final HomeController homeController = Get.find<HomeController>();
+    homeController.addNewExpense(expenseItem);
     
     Get.snackbar(
       'Success',
@@ -177,6 +301,7 @@ class AddExpenseController extends GetxController {
   }
   
   void resetForm() {
+    titleController.clear();
     amountController.clear();
     selectedCategory.value = 'Electronics';
     selectedCurrency.value = 'INR (₹)';
