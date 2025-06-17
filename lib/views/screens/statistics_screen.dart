@@ -1,8 +1,9 @@
-// Fixed views/screens/statistics_screen.dart
+// Updated lib/views/screens/statistics_screen.dart
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/home_controller.dart';
 import 'package:expensary/controllers/statistics_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
+import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:flutter/material.dart';
@@ -14,115 +15,82 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use Get.put to initialize the controller when the screen is first built
     final statisticsController = Get.put(StatisticsController());
     final homeController = Get.find<HomeController>();
     
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Section
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                MyText(
-                  text: 'Statistics',
-                  size: 36,
-                  weight: FontWeight.bold,
-                  color: kwhite,
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [korange, Color(0xFFFF6B35)],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: korange.withOpacity(0.3),
-                        blurRadius: 15,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.transparent,
-                    child: Icon(
-                      Icons.person,
-                      color: kwhite,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      // Using the custom app bar with title and profile
+      appBar: CustomAppBar(
+        title: 'Statistics',
+        type: AppBarType.withProfile,
+        onProfileTap: () {
+          // Handle profile tap
+          Get.snackbar(
+            'Profile',
+            'Profile button tapped',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        },
+        // Optional: Add a filter button if needed
+       
+      ),
+      body: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Time Frame Selector
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: _buildTimeFrameSelector(statisticsController),
             ),
-          ),
-          
-          // Content area
-          Expanded(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Time Frame Selector - Fixed GetX implementation
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: _buildTimeFrameSelector(statisticsController),
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Expenses Chart
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Container(
-                      height: 300,
-                      child: _buildExpenseChart(),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Total Spendings & Due Date Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: _buildTotalSpendingsCard(homeController),
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Recent Transactions
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: MyText(
-                      text: 'Recent Transactions',
-                      size: 24,
-                      weight: FontWeight.bold,
-                      color: kwhite,
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Transaction List - Fixed GetX implementation
-                  _buildRecentTransactions(homeController),
-                  
-                  const SizedBox(height: 100), // Space for bottom navigation
-                ],
+            
+            const SizedBox(height: 30),
+            
+            // Expenses Chart
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                height: 300,
+                child: _buildExpenseChart(),
               ),
             ),
-          ),
-        ],
+            
+            const SizedBox(height: 30),
+            
+            // Total Spendings & Due Date Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: _buildTotalSpendingsCard(homeController),
+            ),
+            
+            const SizedBox(height: 30),
+            
+            // Recent Transactions
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: MyText(
+                text: 'Recent Transactions',
+                size: 24,
+                weight: FontWeight.bold,
+                color: kwhite,
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Transaction List
+            _buildRecentTransactions(homeController),
+            
+            const SizedBox(height: 100), // Space for bottom navigation
+          ],
+        ),
       ),
     );
   }
   
-  // Fixed time frame selector with proper GetX implementation
+  // Time frame selector with proper GetX implementation
   Widget _buildTimeFrameSelector(StatisticsController controller) {
     List<String> timeFrames = ['1W', '1M', '3M', '6M', '1Y', 'ALL'];
     
@@ -191,7 +159,7 @@ class StatisticsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 MyText(
-                  text: '₹${_formatCurrency(controller.spentAmount.value)}',
+                  text: '₨${_formatCurrency(controller.spentAmount.value)}',
                   size: 28,
                   weight: FontWeight.bold,
                   color: kwhite,
@@ -228,7 +196,7 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
   
-  // Fixed recent transactions with proper GetX implementation
+  // Recent transactions with proper GetX implementation
   Widget _buildRecentTransactions(HomeController controller) {
     return GetX<HomeController>(
       builder: (controller) => Column(
@@ -288,7 +256,7 @@ class StatisticsScreen extends StatelessWidget {
           
           // Amount
           MyText(
-            text: '₹${_formatCurrency(expense.amount.abs())}',
+            text: '₨${_formatCurrency(expense.amount.abs())}',
             size: 18,
             weight: FontWeight.bold,
             color: kwhite,

@@ -104,7 +104,7 @@ class _MyTextFieldState extends State<MyTextField> {
               size: widget.labelSize ?? 16,
               paddingBottom: 8,
               weight: FontWeight.w500,
-              color: kblack,
+              color: kwhite,
             ),
           ValueListenableBuilder(
             valueListenable: _focusNotifier,

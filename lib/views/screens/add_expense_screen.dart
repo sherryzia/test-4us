@@ -1,10 +1,10 @@
-// Updated views/screens/add_expense_screen.dart
+// Updated lib/views/screens/add_expense_screen.dart
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/add_expense_controller.dart';
+import 'package:expensary/controllers/bottom_nav_controller.dart';
+import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/views/widgets/my_text.dart';
-import 'package:expensary/views/widgets/my_textfield.dart';
 import 'package:expensary/views/widgets/my_Button.dart';
-import 'package:expensary/views/widgets/custom_bottom_navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -14,9 +14,23 @@ class AddExpenseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AddExpenseController controller = Get.put(AddExpenseController());
+    final BottomNavController navController = Get.find<BottomNavController>();
     
     return Scaffold(
       backgroundColor: backgroundColor,
+      appBar: CustomAppBar(
+        title: 'Add Expenses',
+        type: AppBarType.withProfile,
+        hasUnderline: true,
+        onProfileTap: () {
+          // Handle profile tap
+          Get.snackbar(
+            'Profile',
+            'Profile button tapped',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        },
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -29,369 +43,312 @@ class AddExpenseScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Enhanced Header Section
-              Container(
-                padding: const EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  boxShadow: [
-                    BoxShadow(
-                      color: kblack.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: kwhite.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: kwhite.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new,
-                          color: kwhite,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        MyText(
-                          text: 'Add Expenses',
-                          size: 24,
-                          weight: FontWeight.bold,
-                          color: kwhite,
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          width: 40,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [kpurple, Color(0xFF8E2DE2)],
-                            ),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [korange, Color(0xFFFF6B35)],
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: korange.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: Colors.transparent,
-                        child: Icon(
-                          Icons.person,
-                          color: kwhite,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Enhanced Form Content
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 30),
-                        
-                        // Enhanced Transaction Section
-                        _buildEnhancedSection(
-                          title: 'TRANSACTION',
-                          icon: Icons.schedule,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: controller.selectTime,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                    decoration: BoxDecoration(
-                                      color: kwhite.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: kwhite.withOpacity(0.1),
-                                        width: 1,
+        child: Column(
+          children: [
+            // Enhanced Form Content
+            Expanded(
+              child: SingleChildScrollView(
+                physics: BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 30),
+                      
+                      // Enhanced Transaction Section
+                      _buildEnhancedSection(
+                        title: 'TRANSACTION',
+                        icon: Icons.schedule,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: controller.selectTime,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: kwhite.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: kwhite.withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        color: kblue,
+                                        size: 20,
                                       ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          color: kblue,
-                                          size: 20,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: MyText(
+                                          text: controller.timeController.text.isEmpty 
+                                              ? 'Select Time' 
+                                              : controller.timeController.text,
+                                          size: 16,
+                                          color: controller.timeController.text.isEmpty 
+                                              ? kwhite.withOpacity(0.6) 
+                                              : kwhite,
+                                          weight: FontWeight.w500,
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: MyText(
-                                            text: controller.timeController.text.isEmpty 
-                                                ? 'Select Time' 
-                                                : controller.timeController.text,
-                                            size: 16,
-                                            color: controller.timeController.text.isEmpty 
-                                                ? kwhite.withOpacity(0.6) 
-                                                : kwhite,
-                                            weight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: controller.selectDate,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                    decoration: BoxDecoration(
-                                      color: kwhite.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: kwhite.withOpacity(0.1),
-                                        width: 1,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: controller.selectDate,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: kwhite.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: kwhite.withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today,
+                                        color: kgreen,
+                                        size: 20,
                                       ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_today,
-                                          color: kgreen,
-                                          size: 20,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: MyText(
+                                          text: controller.dateController.text.isEmpty 
+                                              ? 'Select Date' 
+                                              : controller.dateController.text,
+                                          size: 16,
+                                          color: controller.dateController.text.isEmpty 
+                                              ? kwhite.withOpacity(0.6) 
+                                              : kwhite,
+                                          weight: FontWeight.w500,
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: MyText(
-                                            text: controller.dateController.text.isEmpty 
-                                                ? 'Select Date' 
-                                                : controller.dateController.text,
-                                            size: 16,
-                                            color: controller.dateController.text.isEmpty 
-                                                ? kwhite.withOpacity(0.6) 
-                                                : kwhite,
-                                            weight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Rest of the form fields...
+                      const SizedBox(height: 24),
+                      
+                      // Added Merchant/Title Field
+                      _buildEnhancedSection(
+                        title: 'MERCHANT',
+                        icon: Icons.store,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kwhite.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: kwhite.withOpacity(0.1),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                child: Icon(
+                                  Icons.storefront,
+                                  color: korange,
+                                  size: 24,
+                                ),
+                              ),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: controller.titleController,
+                                  keyboardType: TextInputType.text,
+                                  style: TextStyle(
+                                    color: kwhite,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter merchant name',
+                                    hintStyle: TextStyle(
+                                      color: kwhite.withOpacity(0.6),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
                                     ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Added Merchant/Title Field
-                        _buildEnhancedSection(
-                          title: 'MERCHANT',
-                          icon: Icons.store,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: kwhite.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: kwhite.withOpacity(0.1),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Icon(
-                                    Icons.storefront,
-                                    color: korange,
-                                    size: 24,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: controller.titleController,
-                                    keyboardType: TextInputType.text,
-                                    style: TextStyle(
-                                      color: kwhite,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Enter merchant name',
-                                      hintStyle: TextStyle(
-                                        color: kwhite.withOpacity(0.6),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Enhanced Category Section
+                      _buildEnhancedSection(
+                        title: 'CATEGORY',
+                        icon: Icons.category,
+                        child: Obx(() => _buildEnhancedDropdownField(
+                          value: controller.selectedCategory.value,
+                          items: controller.categories,
+                          onChanged: controller.changeCategory,
+                          icon: Icons.shopping_bag,
+                          color: kpurple,
+                        )),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Enhanced Amount Section
+                      _buildEnhancedSection(
+                        title: 'AMOUNT',
+                        icon: Icons.currency_rupee,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kwhite.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: kwhite.withOpacity(0.1),
+                              width: 1,
                             ),
                           ),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Enhanced Category Section
-                        _buildEnhancedSection(
-                          title: 'CATEGORY',
-                          icon: Icons.category,
-                          child: Obx(() => _buildEnhancedDropdownField(
-                            value: controller.selectedCategory.value,
-                            items: controller.categories,
-                            onChanged: controller.changeCategory,
-                            icon: Icons.shopping_bag,
-                            color: kpurple,
-                          )),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Enhanced Amount Section
-                        _buildEnhancedSection(
-                          title: 'AMOUNT',
-                          icon: Icons.currency_rupee,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: kwhite.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: kwhite.withOpacity(0.1),
-                                width: 1,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                child: Icon(
+                                  Icons.currency_rupee,
+                                  color: kgreen,
+                                  size: 24,
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Icon(
-                                    Icons.currency_rupee,
-                                    color: kgreen,
-                                    size: 24,
+                              Expanded(
+                                child: TextFormField(
+                                  controller: controller.amountController,
+                                  keyboardType: TextInputType.number,
+                                  style: TextStyle(
+                                    color: kwhite,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: controller.amountController,
-                                    keyboardType: TextInputType.number,
-                                    style: TextStyle(
-                                      color: kwhite,
+                                  decoration: InputDecoration(
+                                    hintText: '2,999',
+                                    hintStyle: TextStyle(
+                                      color: kwhite.withOpacity(0.6),
                                       fontSize: 18,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    decoration: InputDecoration(
-                                      hintText: '2,999',
-                                      hintStyle: TextStyle(
-                                        color: kwhite.withOpacity(0.6),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Enhanced Currency Section
-                        _buildEnhancedSection(
-                          title: 'CURRENCY',
-                          icon: Icons.attach_money,
-                          child: Obx(() => _buildEnhancedDropdownField(
-                            value: controller.selectedCurrency.value,
-                            items: controller.currencies,
-                            onChanged: controller.changeCurrency,
-                            icon: Icons.language,
-                            color: kblue,
-                          )),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Enhanced Payment Method Section
-                        _buildEnhancedSection(
-                          title: 'PAYMENT METHOD',
-                          icon: Icons.payment,
-                          child: Obx(() => _buildEnhancedDropdownField(
-                            value: controller.selectedPaymentMethod.value,
-                            items: controller.paymentMethods,
-                            onChanged: controller.changePaymentMethod,
-                            icon: Icons.credit_card,
-                            color: korange,
-                          )),
-                        ),
-                        
-                        const SizedBox(height: 50),
-                        
-                        // Updated Save Button
-                        MyButton(
-                          onTap: controller.saveExpense,
-                          buttonText: 'Save Expense',
-                          width: 200,
-                          height: 56,
-                          fillColor: Color(0xFF8E2DE2),
-                          fontColor: kwhite,
-                          fontSize: 18,
-                          radius: 28,
-                          hasgrad: true,
-                          fontWeight: FontWeight.w600,
-                          icon: Icons.save,
-                          iconPosition: IconPosition.left,
-                        ),
-                        
-                        const SizedBox(height: 50),
-                      ],
-                    ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Enhanced Currency Section
+                      _buildEnhancedSection(
+                        title: 'CURRENCY',
+                        icon: Icons.attach_money,
+                        child: Obx(() => _buildEnhancedDropdownField(
+                          value: controller.selectedCurrency.value,
+                          items: controller.currencies,
+                          onChanged: controller.changeCurrency,
+                          icon: Icons.language,
+                          color: kblue,
+                        )),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Enhanced Payment Method Section
+                      _buildEnhancedSection(
+                        title: 'PAYMENT METHOD',
+                        icon: Icons.payment,
+                        child: Obx(() => _buildEnhancedDropdownField(
+                          value: controller.selectedPaymentMethod.value,
+                          items: controller.paymentMethods,
+                          onChanged: controller.changePaymentMethod,
+                          icon: Icons.credit_card,
+                          color: korange,
+                        )),
+                      ),
+                      
+                      const SizedBox(height: 50),
+                      
+                      // Updated Save Button - now navigates back to home screen
+                      MyButton(
+                        onTap: () {
+                          // Save the expense
+                          controller.saveExpense();
+                          
+                          // Navigate back to home screen (index 0)
+                          navController.currentIndex.value = 0;
+                          navController.selectedTabIndex.value = 0;
+                        },
+                        buttonText: 'Save Expense',
+                        width: 200,
+                        height: 56,
+                        fillColor: Color(0xFF8E2DE2),
+                        fontColor: kwhite,
+                        fontSize: 18,
+                        radius: 28,
+                        hasgrad: true,
+                        fontWeight: FontWeight.w600,
+                        icon: Icons.save,
+                        iconPosition: IconPosition.left,
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Cancel Button - navigate back to previous screen
+                      MyButton(
+                        onTap: () {
+                          // Just navigate back to home
+                          navController.currentIndex.value = 0;
+                          navController.selectedTabIndex.value = 0;
+                        },
+                        buttonText: 'Cancel',
+                        width: 200,
+                        height: 56,
+                        fillColor: Colors.transparent,
+                        outlineColor: kwhite.withOpacity(0.2),
+                        fontColor: kwhite,
+                        fontSize: 18,
+                        radius: 28,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      
+                      const SizedBox(height: 50),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: const CustomBottomNavBar(),
+      // No need for a bottom navigation bar here - it's already in the MainNavigationScreen
     );
   }
   
+  // Your existing helper methods...
   Widget _buildEnhancedSection({
     required String title,
     required IconData icon,
@@ -493,7 +450,7 @@ class AddExpenseScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
-            ),// Continued from previous artifact
+            ),
             child: Icon(
               icon,
               color: color,

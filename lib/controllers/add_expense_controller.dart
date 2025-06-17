@@ -14,7 +14,7 @@ class AddExpenseController extends GetxController {
   
   // Observable variables
   final RxString selectedCategory = 'Electronics'.obs;
-  final RxString selectedCurrency = 'INR (₹)'.obs;
+  final RxString selectedCurrency = 'PKR (₨)'.obs;
   final RxString selectedPaymentMethod = 'Physical Cash'.obs;
   final Rx<DateTime> selectedDateTime = DateTime.now().obs;
   
@@ -33,7 +33,7 @@ class AddExpenseController extends GetxController {
   ];
   
   final List<String> currencies = [
-    'INR (₹)',
+    'PKR (₨)',
     'USD (\$)',
     'EUR (€)',
     'GBP (£)',
@@ -304,7 +304,7 @@ class AddExpenseController extends GetxController {
     titleController.clear();
     amountController.clear();
     selectedCategory.value = 'Electronics';
-    selectedCurrency.value = 'INR (₹)';
+    selectedCurrency.value = 'PKR (₨)';
     selectedPaymentMethod.value = 'Physical Cash';
     initializeDateTime();
   }

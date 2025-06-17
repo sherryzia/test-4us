@@ -1,5 +1,6 @@
 // views/screens/home_content.dart
 import 'package:expensary/constants/colors.dart';
+import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
 import 'package:expensary/controllers/home_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
 import 'package:expensary/views/widgets/balance_circle_painter.dart';
@@ -14,34 +15,23 @@ class HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final HomeController controller = Get.put(HomeController());
     
-    return SafeArea(
-      child: Column(
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      // Using the custom app bar with title and profile type
+      appBar: CustomAppBar(
+        title: 'Home',
+        type: AppBarType.withProfile,
+        onProfileTap: () {
+          // Handle profile tap
+          Get.snackbar(
+            'Profile',
+            'Profile button tapped',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        },
+      ),
+      body: Column(
         children: [
-          // Header Section
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                MyText(
-                  text: 'Home',
-                  size: 28,
-                  weight: FontWeight.bold,
-                  color: kwhite,
-                ),
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: korange,
-                  child: Icon(
-                    Icons.person,
-                    color: kwhite,
-                    size: 24,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
           // Expanded content area
           Expanded(
             child: SingleChildScrollView(
@@ -77,7 +67,7 @@ class HomeContent extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 MyText(
-                                  text: '₹${_formatCurrency(controller.availableBalance.value)}',
+                                  text: '₨${_formatCurrency(controller.availableBalance.value)}',
                                   size: 28,
                                   weight: FontWeight.bold,
                                   color: kwhite,
@@ -90,7 +80,7 @@ class HomeContent extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 8),
                                 MyText(
-                                  text: 'Spent: ₹${_formatCurrency(controller.spentAmount.value)}',
+                                  text: 'Spent: ₨${_formatCurrency(controller.spentAmount.value)}',
                                   size: 12,
                                   color: kred.withOpacity(0.8),
                                 ),
@@ -275,7 +265,7 @@ class HomeContent extends StatelessWidget {
           
           // Amount
           MyText(
-            text: '${expense.amount > 0 ? '+' : ''}₹${_formatCurrency(expense.amount.abs())}',
+            text: '${expense.amount > 0 ? '+' : ''}₨${_formatCurrency(expense.amount.abs())}',
             size: 16,
             weight: FontWeight.bold,
             color: expense.amount > 0 ? kgreen : kred,

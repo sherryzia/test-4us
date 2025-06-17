@@ -5,9 +5,9 @@ import 'package:get/get.dart';
 
 class ProfileController extends GetxController {
   // User information
-  final RxString name = 'Harpreet Singh'.obs;
-  final RxString email = 'harpreet.singh@example.com'.obs;
-  final RxString currency = 'INR (₹)'.obs;
+  final RxString name = 'Shaheer Zia Qazi'.obs;
+  final RxString email = 'shaheer.zia.qazi@example.com'.obs;
+  final RxString currency = 'PKR (₨)'.obs;
   
   // Text controllers for editable fields
   final nameController = TextEditingController();
@@ -17,7 +17,7 @@ class ProfileController extends GetxController {
   
   // Currency options
   final List<String> currencies = [
-    'INR (₹)',
+    'PKR (₨)',
     'USD (\$)',
     'EUR (€)',
     'GBP (£)',

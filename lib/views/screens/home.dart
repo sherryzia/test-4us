@@ -158,7 +158,7 @@
 //                                 mainAxisAlignment: MainAxisAlignment.center,
 //                                 children: [
 //                                   MyText(
-//                                     text: '₹${controller.availableBalance.value.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+//                                     text: '₨${controller.availableBalance.value.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
 //                                     size: 28,
 //                                     weight: FontWeight.bold,
 //                                     color: kwhite,
@@ -171,7 +171,7 @@
 //                                   ),
 //                                   const SizedBox(height: 8),
 //                                   MyText(
-//                                     text: 'Spent: ₹${controller.spentAmount.value.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+//                                     text: 'Spent: ₨${controller.spentAmount.value.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
 //                                     size: 12,
 //                                     color: kred.withOpacity(0.8),
 //                                   ),
@@ -407,7 +407,7 @@
           
 //           // Amount
 //           MyText(
-//             text: '${expense.amount > 0 ? '+' : ''}₹${expense.amount.abs().toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+//             text: '${expense.amount > 0 ? '+' : ''}₨${expense.amount.abs().toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
 //             size: 16,
 //             weight: FontWeight.bold,
 //             color: expense.amount > 0 ? kgreen : kred,

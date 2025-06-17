@@ -1,9 +1,12 @@
-// Create a new file: views/screens/profile_screen.dart
+// Updated lib/views/screens/profile_screen.dart
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/profile_controller.dart';
+import 'package:expensary/views/screens/about_screen.dart';
+import 'package:expensary/views/screens/faqs_screen.dart';
+import 'package:expensary/views/screens/help_support_screen.dart';
+import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
-import 'package:expensary/views/widgets/my_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -14,95 +17,81 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ProfileController controller = Get.put(ProfileController());
     
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header Section
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                MyText(
-                  text: 'Profile',
-                  size: 36,
-                  weight: FontWeight.bold,
-                  color: kwhite,
-                ),
-                GestureDetector(
-                  onTap: () {
-                    // Show options menu
-                    showModalBottomSheet(
-                      context: context,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => _buildOptionsMenu(controller),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: kwhite.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.more_vert,
-                      color: kwhite,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Content area
-          Expanded(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  children: [
-                    // Profile Image
-                    _buildProfileImage(context),
-                    
-                    const SizedBox(height: 30),
-                    
-                    // Profile Information Sections
-                    _buildPersonalInfoSection(controller),
-                    
-                    const SizedBox(height: 20),
-                    
-                    _buildPasswordSection(controller),
-                    
-                    const SizedBox(height: 20),
-                    
-                    _buildCurrencySection(controller),
-                    
-                    const SizedBox(height: 40),
-                    
-                    // Logout Button
-                    MyButton(
-                      onTap: controller.logout,
-                      buttonText: 'Log Out',
-                      width: double.infinity,
-                      height: 56,
-                      fillColor: Color(0xFF2A2D40),
-                      fontColor: kwhite,
-                      fontSize: 18,
-                      radius: 28,
-                      fontWeight: FontWeight.w600,
-                      icon: Icons.logout,
-                      iconPosition: IconPosition.left,
-                    ),
-                    
-                    const SizedBox(height: 100), // Space for bottom navigation
-                  ],
-                ),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      // Using the custom app bar with title and options button
+      appBar: CustomAppBar(
+  title: 'Profile',
+  type: AppBarType.withTitle, // Keep this as is - withTitle puts title on left
+  // Remove the actionButton parameter entirely
+  // And instead add this parameter for the right side button:
+  actionButton: GestureDetector(
+    onTap: () {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _buildOptionsMenu(controller),
+      );
+    },
+    child: Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: kwhite.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.more_vert,
+        color: kwhite,
+        size: 24,
+      ),
+    ),
+  ),
+),
+      body: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              
+              // Profile Image
+              _buildProfileImage(context),
+              
+              const SizedBox(height: 30),
+              
+              // Profile Information Sections
+              _buildPersonalInfoSection(controller),
+              
+              const SizedBox(height: 20),
+              
+              _buildPasswordSection(controller),
+              
+              const SizedBox(height: 20),
+              
+              _buildCurrencySection(controller),
+              
+              const SizedBox(height: 40),
+              
+              // Logout Button
+              MyButton(
+                onTap: controller.logout,
+                buttonText: 'Log Out',
+                width: double.infinity,
+                height: 56,
+                fillColor: Color(0xFF2A2D40),
+                fontColor: kwhite,
+                fontSize: 18,
+                radius: 28,
+                fontWeight: FontWeight.w600,
+                icon: Icons.logout,
+                iconPosition: IconPosition.left,
               ),
-            ),
+              
+              const SizedBox(height: 100), // Space for bottom navigation
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -633,85 +622,75 @@ class ProfileScreen extends StatelessWidget {
   }
   
   Widget _buildOptionsMenu(ProfileController controller) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Color(0xFF2A2D40),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Color(0xFF2A2D40),
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
+      ),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MyText(
+          text: 'Options',
+          size: 18,
+          weight: FontWeight.bold,
+          color: kwhite,
         ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          MyText(
-            text: 'Options',
-            size: 18,
-            weight: FontWeight.bold,
-            color: kwhite,
-          ),
-          
-          const SizedBox(height: 20),
-          
-          
-          _buildOptionItem(
-            icon: Icons.help,
-            label: 'FAQs',
-            onTap: () {
-              Get.back();
-              Get.snackbar(
-                'FAQs',
-                'FAQs coming soon',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-          ),
-          
-          _buildOptionItem(
-            icon: Icons.help,
-            label: 'Help & Support',
-            onTap: () {
-              Get.back();
-              Get.snackbar(
-                'Help & Support',
-                'Help & Support coming soon',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-          ),
-          
-          _buildOptionItem(
-            icon: Icons.info,
-            label: 'About',
-            onTap: () {
-              Get.back();
-              Get.snackbar(
-                'About',
-                'About page coming soon',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-          ),
-          
-          const SizedBox(height: 10),
-          
-          MyButton(
-            onTap: () => Get.back(),
-            buttonText: 'Cancel',
-            width: double.infinity,
-            height: 46,
-            fillColor: Colors.transparent,
-            outlineColor: kwhite.withOpacity(0.2),
-            fontColor: kwhite,
-            fontSize: 16,
-            radius: 23,
-            fontWeight: FontWeight.w600,
-          ),
-        ],
-      ),
-    );
-  }
+        
+        const SizedBox(height: 20),
+        
+        // FAQs
+        _buildOptionItem(
+          icon: Icons.help_outline,
+          label: 'FAQs',
+          onTap: () {
+            Get.back();
+            Get.to(() => FAQsScreen());
+          },
+        ),
+        
+        // Help & Support
+        _buildOptionItem(
+          icon: Icons.support_agent,
+          label: 'Help & Support',
+          onTap: () {
+            Get.back();
+            Get.to(() => HelpSupportScreen());
+          },
+        ),
+        
+        // About
+        _buildOptionItem(
+          icon: Icons.info_outline,
+          label: 'About',
+          onTap: () {
+            Get.back();
+            Get.to(() => AboutScreen());
+          },
+        ),
+        
+        const SizedBox(height: 10),
+        
+        MyButton(
+          onTap: () => Get.back(),
+          buttonText: 'Cancel',
+          width: double.infinity,
+          height: 46,
+          fillColor: Colors.transparent,
+          outlineColor: kwhite.withOpacity(0.2),
+          fontColor: kwhite,
+          fontSize: 16,
+          radius: 23,
+          fontWeight: FontWeight.w600,
+        ),
+      ],
+    ),
+  );
+}
   
   Widget _buildOptionItem({
     required IconData icon,

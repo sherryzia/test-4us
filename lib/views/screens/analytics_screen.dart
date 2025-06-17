@@ -1,7 +1,8 @@
-// Updated views/screens/analytics_screen.dart
+// Updated lib/views/screens/analytics_screen.dart
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/home_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
+import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,78 +15,48 @@ class AnalyticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final HomeController controller = Get.find<HomeController>();
     
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header Section
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                MyText(
-                  text: 'Analytics',
-                  size: 36,
-                  weight: FontWeight.bold,
-                  color: kwhite,
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [korange, Color(0xFFFF6B35)],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: korange.withOpacity(0.3),
-                        blurRadius: 15,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.transparent,
-                    child: Icon(
-                      Icons.person,
-                      color: kwhite,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      // Using the custom app bar with title and profile
+      appBar: CustomAppBar(
+        title: 'Analytics',
+        type: AppBarType.withProfile,
+        onProfileTap: () {
+          // Handle profile tap
+          Get.snackbar(
+            'Profile',
+            'Profile button tapped',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        },
+        // Optional: Add an action button if needed
+             ),
+      body: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              
+              // Monthly Summary Card
+              _buildSummaryCard(controller),
+              
+              const SizedBox(height: 30),
+              
+              // Implemented Category Pie Chart
+              _buildCategoryPieChart(controller),
+              
+              const SizedBox(height: 30),
+              
+              // Expense Breakdown by Category
+              _buildExpenseBreakdown(controller),
+              
+              const SizedBox(height: 100), // Space for bottom navigation
+            ],
           ),
-          
-          // Content area
-          Expanded(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Monthly Summary Card
-                    _buildSummaryCard(controller),
-                    
-                    const SizedBox(height: 30),
-                    
-                    // Implemented Category Pie Chart
-                    _buildCategoryPieChart(controller),
-                    
-                    const SizedBox(height: 30),
-                    
-                    // Expense Breakdown by Category
-                    _buildExpenseBreakdown(controller),
-                    
-                    const SizedBox(height: 100), // Space for bottom navigation
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -128,19 +99,19 @@ class AnalyticsScreen extends StatelessWidget {
             children: [
               _buildSummaryItem(
                 title: 'Income',
-                amount: '₹0',
+                amount: '₨0',
                 color: kgreen,
                 icon: Icons.arrow_upward,
               ),
               _buildSummaryItem(
                 title: 'Expenses',
-                amount: '₹${_formatCurrency(controller.spentAmount.value)}',
+                amount: '₨${_formatCurrency(controller.spentAmount.value)}',
                 color: kred,
                 icon: Icons.arrow_downward,
               ),
               _buildSummaryItem(
                 title: 'Balance',
-                amount: '₹${_formatCurrency(controller.availableBalance.value)}',
+                amount: '₨${_formatCurrency(controller.availableBalance.value)}',
                 color: kblue,
                 icon: Icons.account_balance_wallet,
               ),
@@ -188,7 +159,6 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
   
-  // New implementation of category pie chart
   Widget _buildCategoryPieChart(HomeController controller) {
     // Group expenses by category
     Map<String, double> categoryTotals = {};
@@ -251,11 +221,9 @@ class AnalyticsScreen extends StatelessWidget {
             weight: FontWeight.w600,
             color: kwhite,
           ),
-          // const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Container(
-              // height: 200,
               child: Padding(
                 padding: const EdgeInsets.only(left: 20),
                 child: Column(
@@ -419,7 +387,7 @@ class AnalyticsScreen extends StatelessWidget {
                 ),
               ),
               MyText(
-                text: '₹${_formatCurrency(amount)}',
+                text: '₨${_formatCurrency(amount)}',
                 size: 16,
                 weight: FontWeight.bold,
                 color: kwhite,
@@ -435,7 +403,7 @@ class AnalyticsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: FractionallySizedBox(
-              widthFactor: safePercentage, // Using safe value to prevent overflow
+              widthFactor: safePercentage,
               alignment: Alignment.centerLeft,
               child: Container(
                 decoration: BoxDecoration(

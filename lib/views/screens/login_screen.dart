@@ -1,9 +1,10 @@
-// Create a new file: views/screens/auth/login_screen.dart
+// Updated Login Screen with MyTextField
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/views/screens/main_navigation_screen.dart';
 import 'package:expensary/views/screens/signup_screen.dart';
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
+import 'package:expensary/views/widgets/my_textfield.dart'; // Import MyTextField
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -84,7 +85,7 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30), // Reduced spacing
                   
                   // App Logo/Icon
                   Center(
@@ -122,7 +123,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30), // Reduced spacing
                   
                   // Welcome Text
                   Center(
@@ -134,7 +135,7 @@ class LoginScreen extends StatelessWidget {
                           weight: FontWeight.bold,
                           color: kwhite,
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         MyText(
                           text: 'Log in to your Expensary account',
                           size: 16,
@@ -144,27 +145,33 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 30), // Reduced spacing
                   
-                  // Email Field
-                  _buildTextField(
+                  // Email Field - Using MyTextField
+                  MyTextField(
                     controller: controller.emailController,
                     label: 'Email',
                     hint: 'your.email@example.com',
-                    icon: Icons.email,
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: kwhite.withOpacity(0.7),
+                    ),
                     keyboardType: TextInputType.emailAddress,
+                    filledColor: kwhite.withOpacity(0.05),
+                    bordercolor: kwhite.withOpacity(0.1),
+                    hintColor: kwhite.withOpacity(0.3),
+                    marginBottom: 16, // Reduced spacing
                   ),
                   
-                  const SizedBox(height: 20),
-                  
-                  // Password Field
-                  Obx(() => _buildTextField(
+                  // Password Field - Using MyTextField
+                  Obx(() => MyTextField(
                     controller: controller.passwordController,
                     label: 'Password',
                     hint: '••••••••',
-                    icon: Icons.lock,
-                    isPassword: true,
-                    obscureText: !controller.isPasswordVisible.value,
+                    prefixIcon: Icon(
+                      Icons.lock,
+                      color: kwhite.withOpacity(0.7),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.isPasswordVisible.value
@@ -174,9 +181,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                       onPressed: controller.togglePasswordVisibility,
                     ),
+                    isObSecure: !controller.isPasswordVisible.value,
+                    filledColor: kwhite.withOpacity(0.05),
+                    bordercolor: kwhite.withOpacity(0.1),
+                    hintColor: kwhite.withOpacity(0.3),
+                    marginBottom: 16, // Reduced spacing
                   )),
-                  
-                  const SizedBox(height: 20),
                   
                   // Remember Me & Forgot Password
                   Row(
@@ -233,94 +243,22 @@ class LoginScreen extends StatelessWidget {
                     ],
                   ),
                   
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30), // Reduced spacing
                   
                   // Login Button
                   MyButton(
                     onTap: controller.login,
                     buttonText: 'Log In',
                     width: double.infinity,
-                    height: 56,
+                    height: 45,
                     fillColor: Color(0xFFAF4BCE),
                     fontColor: kwhite,
                     fontSize: 18,
-                    radius: 28,
+                    radius: 10,
                     fontWeight: FontWeight.bold,
                   ),
                   
-                  const SizedBox(height: 30),
-                  
-                  // OR Divider
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: kwhite.withOpacity(0.2),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: MyText(
-                          text: 'OR',
-                          size: 14,
-                          color: kwhite.withOpacity(0.5),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: kwhite.withOpacity(0.2),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Social Login Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSocialButton(
-                        icon: Icons.g_mobiledata,
-                        color: Colors.red,
-                        onTap: () {
-                          Get.snackbar(
-                            'Google Login',
-                            'Google login coming soon',
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      _buildSocialButton(
-                        icon: Icons.facebook,
-                        color: Colors.blue,
-                        onTap: () {
-                          Get.snackbar(
-                            'Facebook Login',
-                            'Facebook login coming soon',
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      _buildSocialButton(
-                        icon: Icons.apple,
-                        color: Colors.white,
-                        onTap: () {
-                          Get.snackbar(
-                            'Apple Login',
-                            'Apple login coming soon',
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24), // Reduced spacing
                   
                   // Sign Up Text
                   Center(
@@ -352,89 +290,6 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool isPassword = false,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        MyText(
-          text: label,
-          size: 16,
-          weight: FontWeight.w600,
-          color: kwhite,
-          paddingBottom: 10,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: kwhite.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: kwhite.withOpacity(0.1),
-              width: 1,
-            ),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            style: TextStyle(
-              color: kwhite,
-              fontSize: 16,
-            ),
-            decoration: InputDecoration(
-              prefixIcon: Icon(
-                icon,
-                color: kwhite.withOpacity(0.7),
-              ),
-              suffixIcon: suffixIcon,
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: kwhite.withOpacity(0.3),
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildSocialButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          color: kwhite.withOpacity(0.05),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: kwhite.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 30,
         ),
       ),
     );
