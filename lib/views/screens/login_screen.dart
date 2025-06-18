@@ -1,10 +1,11 @@
-// Updated Login Screen with MyTextField
+// lib/views/screens/login_screen.dart (Updated)
 import 'package:expensary/constants/colors.dart';
+import 'package:expensary/views/screens/forgot_password_screen.dart';
 import 'package:expensary/views/screens/main_navigation_screen.dart';
 import 'package:expensary/views/screens/signup_screen.dart';
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
-import 'package:expensary/views/widgets/my_textfield.dart'; // Import MyTextField
+import 'package:expensary/views/widgets/my_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -45,14 +46,8 @@ class LoginController extends GetxController {
   }
   
   void forgotPassword() {
-    // Show a snackbar for now, as we're not implementing the actual logic
-    Get.snackbar(
-      'Reset Password',
-      'Password reset functionality coming soon',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.blue.withOpacity(0.8),
-      colorText: Colors.white,
-    );
+    // Navigate to forgot password screen
+    Get.to(() => ForgotPasswordScreen());
   }
 }
 
@@ -85,7 +80,7 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 30), // Reduced spacing
+                  const SizedBox(height: 30),
                   
                   // App Logo/Icon
                   Center(
@@ -123,7 +118,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   
-                  const SizedBox(height: 30), // Reduced spacing
+                  const SizedBox(height: 30),
                   
                   // Welcome Text
                   Center(
@@ -145,9 +140,9 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   
-                  const SizedBox(height: 30), // Reduced spacing
+                  const SizedBox(height: 30),
                   
-                  // Email Field - Using MyTextField
+                  // Email Field - Using MyTextField with focus border color
                   MyTextField(
                     controller: controller.emailController,
                     label: 'Email',
@@ -159,11 +154,12 @@ class LoginScreen extends StatelessWidget {
                     keyboardType: TextInputType.emailAddress,
                     filledColor: kwhite.withOpacity(0.05),
                     bordercolor: kwhite.withOpacity(0.1),
+                    focusedBorderColor: Color(0xFFAF4BCE), // Purple focus border
                     hintColor: kwhite.withOpacity(0.3),
-                    marginBottom: 16, // Reduced spacing
+                    marginBottom: 16,
                   ),
                   
-                  // Password Field - Using MyTextField
+                  // Password Field - Using MyTextField with focus border color
                   Obx(() => MyTextField(
                     controller: controller.passwordController,
                     label: 'Password',
@@ -184,8 +180,9 @@ class LoginScreen extends StatelessWidget {
                     isObSecure: !controller.isPasswordVisible.value,
                     filledColor: kwhite.withOpacity(0.05),
                     bordercolor: kwhite.withOpacity(0.1),
+                    focusedBorderColor: Color(0xFFAF4BCE), // Purple focus border
                     hintColor: kwhite.withOpacity(0.3),
-                    marginBottom: 16, // Reduced spacing
+                    marginBottom: 16,
                   )),
                   
                   // Remember Me & Forgot Password
@@ -243,7 +240,7 @@ class LoginScreen extends StatelessWidget {
                     ],
                   ),
                   
-                  const SizedBox(height: 30), // Reduced spacing
+                  const SizedBox(height: 30),
                   
                   // Login Button
                   MyButton(
@@ -258,7 +255,7 @@ class LoginScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                   
-                  const SizedBox(height: 24), // Reduced spacing
+                  const SizedBox(height: 24),
                   
                   // Sign Up Text
                   Center(

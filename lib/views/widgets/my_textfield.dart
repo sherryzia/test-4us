@@ -1,3 +1,4 @@
+// lib/views/widgets/my_textfield.dart (Updated)
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:expensary/constants/colors.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ class MyTextField extends StatefulWidget {
   final String? label, hint, suffixtext, prefixtext;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onFieldSubmitted; // Add this parameter
+  final ValueChanged<String>? onFieldSubmitted;
   final bool? isObSecure,
       haveLabel,
       isFilled,
@@ -23,7 +24,7 @@ class MyTextField extends StatefulWidget {
   final int? maxLines;
   final Widget? suffixIcon, prefixIcon;
   final Color? filledColor,
-      focusedFilledColor,
+      focusedBorderColor, // Changed from focusedFilledColor
       hintColor,
       bordercolor,
       fhintColor;
@@ -37,14 +38,14 @@ class MyTextField extends StatefulWidget {
     this.hint,
     this.label,
     this.onChanged,
-    this.onFieldSubmitted, // Initialize the parameter
+    this.onFieldSubmitted,
     this.isObSecure = false,
     this.marginBottom = 15.0,
     this.maxLines,
     this.isFilled = true,
     this.filledColor,
-    this.focusedFilledColor = kwhite,
-    this.fhintColor = kblue,
+    this.focusedBorderColor, // Changed parameter name
+    this.fhintColor,
     this.hintColor,
     this.bordercolor,
     this.isright,
@@ -125,11 +126,10 @@ class _MyTextFieldState extends State<MyTextField> {
                 style: TextStyle(
                   fontFamily: AppFonts.SFDISPLAY,
                   fontSize: 15,
-                  color: kblack,
+                  color: kwhite, // Keep text color consistent
                 ),
                 textAlign:
                     widget.isright == true ? TextAlign.right : TextAlign.left,
-                // Don't assign focus node if the field is read-only
                 focusNode: widget.isReadOnly ? null : _focusNode,
                 decoration: InputDecoration(
                   prefixIcon: widget.useCountryCodePicker == true
@@ -148,8 +148,6 @@ class _MyTextFieldState extends State<MyTextField> {
                               showDropDownButton: false,
                               flagDecoration:
                                   BoxDecoration(shape: BoxShape.circle),
-                              // Remove the favorite parameter to eliminate pinned countries
-                              // favorite: ['+39', 'FR'],
                               showCountryOnly: false,
                               showOnlyCountryWhenClosed: false,
                               alignLeft: false,
@@ -176,7 +174,7 @@ class _MyTextFieldState extends State<MyTextField> {
                             style: TextStyle(
                               fontFamily: AppFonts.SFDISPLAY,
                               fontSize: 14,
-                              color: shouldShowFocused ? korange : korange,
+                              color: korange, // Keep consistent
                             ),
                           ),
                         )
@@ -189,7 +187,7 @@ class _MyTextFieldState extends State<MyTextField> {
                             style: TextStyle(
                               fontFamily: AppFonts.SFDISPLAY,
                               fontSize: 14,
-                              color: shouldShowFocused ? korange : korange,
+                              color: korange, // Keep consistent
                             ),
                           ),
                         )
@@ -197,14 +195,10 @@ class _MyTextFieldState extends State<MyTextField> {
                   hintStyle: TextStyle(
                     fontFamily: AppFonts.SFDISPLAY,
                     fontSize: 14,
-                    color: shouldShowFocused
-                        ? widget.fhintColor
-                        : widget.hintColor,
+                    color: widget.hintColor ?? kgrey, // Keep consistent hint color
                   ),
                   filled: true,
-                  fillColor: shouldShowFocused
-                      ? widget.focusedFilledColor
-                      : widget.filledColor ?? kgrey2,
+                  fillColor: widget.filledColor ?? kgrey2, // Keep consistent fill color
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                         color: widget.bordercolor ?? ktransparent, width: 1),
@@ -212,10 +206,10 @@ class _MyTextFieldState extends State<MyTextField> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
-                        color: widget.isReadOnly
-                            ? (widget.bordercolor ?? ktransparent)
-                            : (widget.bordercolor ?? kblue),
-                        width: 1),
+                        color: shouldShowFocused
+                            ? (widget.focusedBorderColor ?? kblue) // Only change border color
+                            : (widget.bordercolor ?? ktransparent),
+                        width: shouldShowFocused ? 2 : 1), // Slightly thicker border when focused
                     borderRadius: BorderRadius.circular(widget.radius ?? 10),
                   ),
                 ),
@@ -238,7 +232,7 @@ class DatePickerField extends StatefulWidget {
   final Color? iconColor;
   final ValueChanged<DateTime>? onDateSelected;
   final bool isReadOnly;
-  final bool showYear; // New parameter
+  final bool showYear;
 
   const DatePickerField({
     Key? key,
@@ -251,7 +245,7 @@ class DatePickerField extends StatefulWidget {
     this.iconColor,
     this.onDateSelected,
     this.isReadOnly = false,
-    this.showYear = false, // Default value is false
+    this.showYear = false,
   }) : super(key: key);
 
   @override
@@ -269,7 +263,6 @@ class _DatePickerFieldState extends State<DatePickerField> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    // If field is read-only, don't show the date picker
     if (widget.isReadOnly) return;
     
     final DateTime? picked = await showDatePicker(
@@ -281,12 +274,10 @@ class _DatePickerFieldState extends State<DatePickerField> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        // Format date based on showYear parameter
         _dateController.text = widget.showYear
-            ? DateFormat('MMMM d, yyyy').format(_selectedDate!)  // Month Date, Year
-            : DateFormat('MMMM d').format(_selectedDate!);       // Month Date
+            ? DateFormat('MMMM d, yyyy').format(_selectedDate!)
+            : DateFormat('MMMM d').format(_selectedDate!);
       });
-      // Notify parent widget of the selected date
       if (widget.onDateSelected != null) {
         widget.onDateSelected!(picked);
       }
@@ -326,13 +317,11 @@ class _DatePickerFieldState extends State<DatePickerField> {
                     fontFamily: AppFonts.SFDISPLAY,
                     fontSize: 14,
                     color: widget.isReadOnly 
-                        ? (widget.textColor ?? kblack2) // Use a greyed out color if read-only
+                        ? (widget.textColor ?? kblack2)
                         : (widget.textColor ?? kblack2),
                   ),
                 ),
                 Spacer(),
-                // Show a different icon for read-only fields
-                
               ],
             ),
           ),

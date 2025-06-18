@@ -1,6 +1,6 @@
-// views/screens/home_content.dart
+// views/screens/home_content.dart (Updated)
 import 'package:expensary/constants/colors.dart';
-import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
+import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/controllers/home_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
 import 'package:expensary/views/widgets/balance_circle_painter.dart';
@@ -17,12 +17,10 @@ class HomeContent extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: backgroundColor,
-      // Using the custom app bar with title and profile type
       appBar: CustomAppBar(
         title: 'Home',
         type: AppBarType.withProfile,
         onProfileTap: () {
-          // Handle profile tap
           Get.snackbar(
             'Profile',
             'Profile button tapped',
@@ -32,7 +30,6 @@ class HomeContent extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Expanded content area
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
@@ -40,8 +37,6 @@ class HomeContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 20),
-                    
                     // Circular Progress Chart
                     Obx(() => Center(
                       child: Container(
@@ -50,7 +45,6 @@ class HomeContent extends StatelessWidget {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Custom Circular Progress with half red, half green
                             SizedBox(
                               width: 240,
                               height: 240,
@@ -61,8 +55,6 @@ class HomeContent extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            
-                            // Center text
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -91,10 +83,10 @@ class HomeContent extends StatelessWidget {
                       ),
                     )),
                     
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 10),
                     
-                    // Tip of the Day Card
-                    Obx(() => _buildTipCard(controller, context)),
+                    // Rotating Tips Card
+                    _buildRotatingTipsCard(controller, context),
                     
                     const SizedBox(height: 30),
                     
@@ -111,10 +103,6 @@ class HomeContent extends StatelessWidget {
                     )),
                     
                     const SizedBox(height: 20),
-                    
-                   
-                    
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -125,69 +113,155 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  Widget _buildTipCard(HomeController controller, BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: kblack2.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: kwhite.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          MyText(
-            text: 'Tip of the Day',
-            size: 16,
-            weight: FontWeight.w500,
-            color: kwhite.withOpacity(0.8),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: MyText(
-                  text: controller.tipTitle.value,
-                  size: 18,
-                  weight: FontWeight.w600,
-                  color: kwhite,
-                ),
+  Widget _buildRotatingTipsCard(HomeController controller, BuildContext context) {
+    return Obx(() {
+      final currentTip = controller.currentTip;
+      
+      return GestureDetector(
+        onHorizontalDragEnd: (details) {
+          // Handle swipe gestures
+          if (details.primaryVelocity! > 0) {
+            // Swiped right (previous tip)
+            controller.goToPreviousTip();
+          } else if (details.primaryVelocity! < 0) {
+            // Swiped left (next tip)
+            controller.goToNextTip();
+          }
+        },
+        child: AnimatedSwitcher(
+          duration: Duration(milliseconds: 500),
+          transitionBuilder: (child, animation) {
+            return SlideTransition(
+              position: animation.drive(
+                Tween<Offset>(
+                  begin: Offset(0.3, 0),
+                  end: Offset.zero,
+                ).chain(CurveTween(curve: Curves.easeInOut)),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: kwhite.withOpacity(0.7),
-                size: 16,
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 3,
+            );
+          },
+          child: Container(
+            key: ValueKey(controller.currentTipIndex.value),
             width: double.infinity,
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: kgrey.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                height: 3,
-                width: MediaQuery.of(context).size.width * controller.tipProgress.value,
-                decoration: BoxDecoration(
-                  color: kgreen,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                 Color.fromARGB(255, 103, 0, 193),
+              Color.fromARGB(255, 63, 0, 117),
+                ],
               ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: kwhite.withOpacity(0.1),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF8E2DE2).withOpacity(0.2),
+                  blurRadius: 15,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with navigation dots
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        MyText(
+                          text: 'Tips',
+                          size: 16,
+                          weight: FontWeight.w600,
+                          color: kwhite.withOpacity(0.9),
+                        ),
+                      ],
+                    ),
+                    // Navigation dots
+                    Row(
+                      children: List.generate(
+                        controller.tips.length,
+                        (index) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: index == controller.currentTipIndex.value
+                                ? Colors.amber
+                                : kwhite.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Tip title
+                MyText(
+                  text: currentTip.title,
+                  size: 18,
+                  weight: FontWeight.bold,
+                  color: kwhite,
+                  lineHeight: 1.3,
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Tip description
+                MyText(
+                  text: currentTip.description,
+                  size: 14,
+                  color: kwhite.withOpacity(0.8),
+                  lineHeight: 1.4,
+                ),
+                
+                const SizedBox(height: 16),
+                
+                
+                // Swipe indicator
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.swipe,
+                        color: kwhite.withOpacity(0.5),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      MyText(
+                        text: 'Swipe for more tips',
+                        size: 12,
+                        color: kwhite.withOpacity(0.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 
   Widget _buildExpensesHeader() {
@@ -202,7 +276,6 @@ class HomeContent extends StatelessWidget {
         ),
         GestureDetector(
           onTap: () {
-            // Navigate to all expenses
             Get.snackbar('Navigation', 'See all expenses');
           },
           child: MyText(
@@ -216,7 +289,6 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  
   Widget _buildExpenseItem(ExpenseItem expense) {
     IconData iconData = _getIconData(expense.iconData);
     Color iconBg = expense.iconBg == 'white' ? kwhite : kblack;
@@ -283,6 +355,14 @@ class HomeContent extends StatelessWidget {
         return Icons.phone_iphone;
       case 'local_taxi':
         return Icons.local_taxi;
+      case 'amazon':
+        return Icons.shopping_cart;
+      case 'mcdonalds':
+        return Icons.fastfood;
+      case 'starbucks':
+        return Icons.coffee;
+      case 'mastercard':
+        return Icons.credit_card;
       default:
         return Icons.shopping_bag;
     }

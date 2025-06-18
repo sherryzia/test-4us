@@ -1,5 +1,5 @@
-
 // Updated controllers/home_controller.dart
+import 'dart:async';
 import 'package:expensary/models/expense_item_model.dart';
 import 'package:expensary/views/screens/add_expense_screen.dart';
 import 'package:get/get.dart';
@@ -14,9 +14,52 @@ class HomeController extends GetxController {
   double get spentPercentage => spentAmount.value / monthlyBudget.value;
   double get availablePercentage => availableBalance.value / monthlyBudget.value;
   
-  // Tip of the day
-  final RxString tipTitle = 'Prepare a Budget and Abide by it'.obs;
-  final RxDouble tipProgress = 0.4.obs;
+  // Tips system
+  final RxInt currentTipIndex = 0.obs;
+  Timer? _tipTimer;
+  
+  final List<TipItem> tips = [
+    TipItem(
+      title: 'Prepare a Budget and Stick to It',
+      description: 'Create a monthly budget and track your spending to stay on target.',
+      progress: 0.4,
+    ),
+    TipItem(
+      title: 'Track Every Small Expense',
+      description: 'Small purchases add up quickly. Track coffee, snacks, and daily expenses.',
+      progress: 0.7,
+    ),
+    TipItem(
+      title: 'Use the 50/30/20 Rule',
+      description: '50% needs, 30% wants, 20% savings and debt repayment.',
+      progress: 0.6,
+    ),
+    TipItem(
+      title: 'Review Your Expenses Weekly',
+      description: 'Check your spending patterns every week to stay in control.',
+      progress: 0.8,
+    ),
+    TipItem(
+      title: 'Set Up Emergency Fund',
+      description: 'Save at least 3-6 months of expenses for unexpected situations.',
+      progress: 0.3,
+    ),
+    TipItem(
+      title: 'Avoid Impulse Purchases',
+      description: 'Wait 24 hours before buying non-essential items.',
+      progress: 0.5,
+    ),
+    TipItem(
+      title: 'Use Cash for Discretionary Spending',
+      description: 'Physical cash makes you more aware of your spending.',
+      progress: 0.9,
+    ),
+    TipItem(
+      title: 'Cancel Unused Subscriptions',
+      description: 'Review and cancel subscriptions you don\'t actively use.',
+      progress: 0.2,
+    ),
+  ];
   
   // Sample expenses data with brand icons
   final RxList<ExpenseItem> expenses = <ExpenseItem>[
@@ -60,14 +103,42 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Initialize data or fetch from API
     loadData();
+    startTipRotation();
+  }
+  
+  @override
+  void onClose() {
+    _tipTimer?.cancel();
+    super.onClose();
   }
   
   void loadData() {
     // Simulate API call or load from local storage
     // This is where you'd fetch real data
   }
+  
+  void startTipRotation() {
+    _tipTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      currentTipIndex.value = (currentTipIndex.value + 1) % tips.length;
+    });
+  }
+  
+  void goToNextTip() {
+    currentTipIndex.value = (currentTipIndex.value + 1) % tips.length;
+    // Reset timer when user manually swipes
+    _tipTimer?.cancel();
+    startTipRotation();
+  }
+  
+  void goToPreviousTip() {
+    currentTipIndex.value = (currentTipIndex.value - 1 + tips.length) % tips.length;
+    // Reset timer when user manually swipes
+    _tipTimer?.cancel();
+    startTipRotation();
+  }
+  
+  TipItem get currentTip => tips[currentTipIndex.value];
   
   void addExpense() {
     // Navigate to Add Expense screen
@@ -96,4 +167,17 @@ class HomeController extends GetxController {
       availableBalance.value += expense.amount;
     }
   }
+}
+
+// Tip item model
+class TipItem {
+  final String title;
+  final String description;
+  final double progress;
+  
+  TipItem({
+    required this.title,
+    required this.description,
+    required this.progress,
+  });
 }

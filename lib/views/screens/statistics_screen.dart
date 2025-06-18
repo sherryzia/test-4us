@@ -1,10 +1,9 @@
-// Updated lib/views/screens/statistics_screen.dart
+// lib/views/screens/statistics_screen.dart (Improved)
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/home_controller.dart';
 import 'package:expensary/controllers/statistics_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
-import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
-import 'package:expensary/views/widgets/my_Button.dart';
+import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,30 +19,34 @@ class StatisticsScreen extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: backgroundColor,
-      // Using the custom app bar with title and profile
       appBar: CustomAppBar(
         title: 'Statistics',
         type: AppBarType.withProfile,
         onProfileTap: () {
-          // Handle profile tap
           Get.snackbar(
             'Profile',
             'Profile button tapped',
             snackPosition: SnackPosition.BOTTOM,
           );
         },
-        // Optional: Add a filter button if needed
-       
       ),
       body: SingleChildScrollView(
         physics: BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Time Frame Selector
+            // Time Frame Dropdown Selector
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: _buildTimeFrameSelector(statisticsController),
+              child: _buildTimeFrameDropdown(statisticsController),
+            ),
+            
+            const SizedBox(height: 30),
+            
+            // Spending Insights Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: _buildSpendingInsightsCard(statisticsController, homeController),
             ),
             
             const SizedBox(height: 30),
@@ -53,16 +56,16 @@ class StatisticsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Container(
                 height: 300,
-                child: _buildExpenseChart(),
+                child: Obx(() => _buildExpenseChart(statisticsController)),
               ),
             ),
             
             const SizedBox(height: 30),
             
-            // Total Spendings & Due Date Card
+            // Spending Summary Card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: _buildTotalSpendingsCard(homeController),
+              child: _buildSpendingSummaryCard(homeController, statisticsController),
             ),
             
             const SizedBox(height: 30),
@@ -83,110 +86,247 @@ class StatisticsScreen extends StatelessWidget {
             // Transaction List
             _buildRecentTransactions(homeController),
             
-            const SizedBox(height: 100), // Space for bottom navigation
+            const SizedBox(height: 100),
           ],
         ),
       ),
     );
   }
   
-  // Time frame selector with proper GetX implementation
-  Widget _buildTimeFrameSelector(StatisticsController controller) {
-    List<String> timeFrames = ['1W', '1M', '3M', '6M', '1Y', 'ALL'];
-    
+  // Time frame dropdown selector
+  Widget _buildTimeFrameDropdown(StatisticsController controller) {
     return Container(
-      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
+        color: kwhite.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: kwhite.withOpacity(0.1),
+          width: 1,
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: timeFrames.map((frame) => 
-          GetX<StatisticsController>(
-            builder: (controller) => GestureDetector(
-              onTap: () => controller.changeTimeFrame(frame),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: controller.selectedTimeFrame.value == frame 
-                      ? Color(0xFFAF4BCE)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(25),
+      child: Obx(() => DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: controller.selectedTimeFrame.value,
+          dropdownColor: Color(0xFF2A2D40),
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            color: kwhite.withOpacity(0.7),
+          ),
+          style: TextStyle(
+            color: kwhite,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              controller.changeTimeFrame(newValue);
+            }
+          },
+          isExpanded: true,
+          items: controller.timeFrameOptions.map<DropdownMenuItem<String>>(
+            (Map<String, String> option) {
+              return DropdownMenuItem<String>(
+                value: option['value'],
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.timeline,
+                      color: Color(0xFFAF4BCE),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      option['label']!,
+                      style: TextStyle(
+                        color: kwhite,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                child: MyText(
-                  text: frame,
-                  size: 16,
-                  weight: controller.selectedTimeFrame.value == frame
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+              );
+            }
+          ).toList(),
+        ),
+      )),
+    );
+  }
+  
+  // Spending insights card
+  Widget _buildSpendingInsightsCard(StatisticsController statisticsController, HomeController homeController) {
+    return Obx(() {
+      final insights = statisticsController.spendingInsights;
+      if (insights.isEmpty) return Container();
+      
+      final trend = insights['trend'] as String;
+      final changePercent = insights['changePercent'] as double;
+      final isIncreasing = trend == 'increasing';
+      
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color.fromARGB(255, 103, 0, 193),
+              Color.fromARGB(255, 63, 0, 117),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF8E2DE2).withOpacity(0.3),
+              blurRadius: 20,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                MyText(
+                  text: 'Spending Insights',
+                  size: 18,
+                  weight: FontWeight.bold,
                   color: kwhite,
                 ),
-              ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isIncreasing ? kred.withOpacity(0.2) : kgreen.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isIncreasing ? Icons.trending_up : Icons.trending_down,
+                        color: isIncreasing ? kred : kgreen,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      MyText(
+                        text: '${changePercent.toStringAsFixed(1)}%',
+                        size: 14,
+                        weight: FontWeight.bold,
+                        color: isIncreasing ?kred : kgreen,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          )
-        ).toList(),
-      ),
-    );
+            
+            const SizedBox(height: 16),
+            
+            MyText(
+              text: 'Your spending is ${trend} compared to the previous period. ${insights['isAboveAverage'] ? 'You\'re spending above your average.' : 'You\'re spending below your average.'}',
+              size: 14,
+              color: kwhite.withOpacity(0.9),
+              lineHeight: 1.5,
+            ),
+          ],
+        ),
+      );
+    });
   }
   
-  Widget _buildExpenseChart() {
+  // Improved expense chart with dynamic data
+  Widget _buildExpenseChart(StatisticsController controller) {
     return CustomPaint(
-      painter: ExpenseChartPainter(),
-      child: Container(), // Empty container as the chart is drawn by the CustomPainter
+      painter: ImprovedExpenseChartPainter(
+        data: controller.chartData,
+        labels: controller.chartLabels,
+        yAxisLabels: controller.yAxisLabels,
+      ),
+      child: Container(),
     );
   }
   
-  Widget _buildTotalSpendingsCard(HomeController controller) {
+  // Spending summary card (replaces the meaningless "pay early" card)
+  Widget _buildSpendingSummaryCard(HomeController homeController, StatisticsController statisticsController) {
     return GetX<HomeController>(
-      builder: (controller) => Container(
+      builder: (homeController) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Color(0xFF2A2D40),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
-            // Total Spendings
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 MyText(
-                  text: 'Total Spendings',
-                  size: 16,
-                  color: kwhite.withOpacity(0.8),
-                ),
-                const SizedBox(height: 8),
-                MyText(
-                  text: '₨${_formatCurrency(controller.spentAmount.value)}',
-                  size: 28,
+                  text: 'Spending Summary',
+                  size: 18,
                   weight: FontWeight.bold,
                   color: kwhite,
+                ),
+                Obx(() => MyText(
+                  text: statisticsController.currentTimeFrameLabel,
+                  size: 14,
+                  color: kwhite.withOpacity(0.7),
+                )),
+              ],
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Summary stats
+            Row(
+              children: [
+                // Total Spent
+                Expanded(
+                  child: _buildSummaryItem(
+                    title: 'Total Spent',
+                    amount: '₨${_formatCurrency(homeController.spentAmount.value)}',
+                    icon: Icons.trending_up,
+                    color: kred,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Average Daily
+                Expanded(
+                  child: _buildSummaryItem(
+                    title: 'Daily Average',
+                    amount: '₨${_formatCurrency(homeController.spentAmount.value / 30)}',
+                    icon: Icons.calendar_today,
+                    color: kblue,
+                  ),
                 ),
               ],
             ),
             
-            // Due Date
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            const SizedBox(height: 16),
+            
+            Row(
               children: [
-                MyText(
-                  text: 'Due Date 10th Oct',
-                  size: 16,
-                  color: kwhite.withOpacity(0.8),
+                // Remaining Budget
+                Expanded(
+                  child: _buildSummaryItem(
+                    title: 'Remaining',
+                    amount: '₨${_formatCurrency(homeController.availableBalance.value)}',
+                    icon: Icons.account_balance_wallet,
+                    color: kgreen,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                MyButton(
-                  onTap: () {},
-                  buttonText: 'PAY EARLY',
-                  width: 150,
-                  height: 40,
-                  fillColor: Color(0xFFAF4BCE),
-                  fontColor: kwhite,
-                  fontSize: 16,
-                  radius: 25,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(width: 16),
+                // Budget Progress
+                Expanded(
+                  child: _buildSummaryItem(
+                    title: 'Budget Used',
+                    amount: '${(homeController.spentPercentage * 100).toStringAsFixed(1)}%',
+                    icon: Icons.pie_chart,
+                    color: korange,
+                  ),
                 ),
               ],
             ),
@@ -196,12 +336,60 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
   
-  // Recent transactions with proper GetX implementation
+  Widget _buildSummaryItem({
+    required String title,
+    required String amount,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: MyText(
+                  text: title,
+                  size: 12,
+                  color: kwhite.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          MyText(
+            text: amount,
+            size: 16,
+            weight: FontWeight.bold,
+            color: kwhite,
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Recent transactions (unchanged)
   Widget _buildRecentTransactions(HomeController controller) {
     return GetX<HomeController>(
       builder: (controller) => Column(
         children: controller.expenses
-          .take(3) // Only show the most recent 3 transactions
+          .take(3)
           .map((expense) => _buildTransactionItem(expense))
           .toList(),
       ),
@@ -267,22 +455,11 @@ class StatisticsScreen extends StatelessWidget {
   }
   
   Widget _getLogo(String iconName, Color color) {
-    // For a real implementation, you would use actual logos
     switch (iconName) {
-      case 'netflix':
-        return Container(
-          padding: EdgeInsets.all(4),
-          child: Image.asset(
-            'assets/images/netflix_logo.png',
-            width: 40,
-            height: 40,
-            errorBuilder: (ctx, obj, stk) => Icon(Icons.movie, color: Colors.red, size: 26),
-          ),
-        );
       case 'amazon':
         return Icon(Icons.shopping_cart, color: color, size: 26);
       case 'apple':
-        return Icon(Icons.apple, color: color, size: 26);
+        return Icon(Icons.phone_iphone, color: color, size: 26);
       case 'mcdonalds':
         return Icon(Icons.fastfood, color: Colors.amber, size: 26);
       case 'starbucks':
@@ -295,14 +472,12 @@ class StatisticsScreen extends StatelessWidget {
   }
   
   String _formatCurrency(double amount) {
-    // For amounts with decimal places
     if (amount - amount.truncate() > 0) {
       return amount.toStringAsFixed(2).replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (Match m) => '${m[1]},'
       );
     }
-    // For whole numbers
     return amount.toInt().toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},'
@@ -310,22 +485,28 @@ class StatisticsScreen extends StatelessWidget {
   }
   
   String _formatDateWithTime(String date) {
-    // Sample format: "21 Sept - 13:01"
-    // In a real app, you would parse the actual date and format it accordingly
-    
-    // Extract month and day
     List<String> parts = date.split(' ');
     if (parts.length >= 2) {
       String day = parts[1].replaceAll(',', '');
       String month = parts[0];
-      return '$day $month - 13:01'; // Add a placeholder time
+      return '$day $month - 13:01';
     }
     return date;
   }
 }
 
-// Custom painter for the expense chart
-class ExpenseChartPainter extends CustomPainter {
+// Improved custom painter with dynamic data
+class ImprovedExpenseChartPainter extends CustomPainter {
+  final List<double> data;
+  final List<String> labels;
+  final List<String> yAxisLabels;
+  
+  ImprovedExpenseChartPainter({
+    required this.data,
+    required this.labels,
+    required this.yAxisLabels,
+  });
+  
   @override
   void paint(Canvas canvas, Size size) {
     final width = size.width;
@@ -343,25 +524,11 @@ class ExpenseChartPainter extends CustomPainter {
     }
     
     // Vertical grid lines
-    for (int i = 1; i <= 6; i++) {
-      final x = i * width / 6;
+    final stepX = width / labels.length;
+    for (int i = 1; i <= labels.length; i++) {
+      final x = i * stepX;
       canvas.drawLine(Offset(x, 0), Offset(x, height * 0.8), gridPaint);
     }
-    
-    // Chart data - simulated spending trend
-    final List<double> data = [
-      0.1, 0.25, 0.4, 0.65, 0.55, 1.0
-    ];
-    
-    // X-axis labels (days of week)
-    final List<String> labels = [
-      'MON', 'TUE', 'WED', 'THR', 'FRI', 'SAT'
-    ];
-    
-    // Y-axis labels (amounts)
-    final List<String> amountLabels = [
-      '1K', '2K', '3K', '4K', '5K'
-    ];
     
     // Draw x-axis labels
     final textStyle = TextStyle(
@@ -370,7 +537,7 @@ class ExpenseChartPainter extends CustomPainter {
     );
     
     for (int i = 0; i < labels.length; i++) {
-      final x = i * width / 6 + (width / 12);
+      final x = i * stepX + (stepX / 2);
       final textPainter = TextPainter(
         text: TextSpan(text: labels[i], style: textStyle),
         textDirection: TextDirection.ltr,
@@ -380,10 +547,10 @@ class ExpenseChartPainter extends CustomPainter {
     }
     
     // Draw y-axis labels
-    for (int i = 0; i < amountLabels.length; i++) {
+    for (int i = 0; i < yAxisLabels.length; i++) {
       final y = height * 0.8 - (i + 1) * (height * 0.8) / 5;
       final textPainter = TextPainter(
-        text: TextSpan(text: amountLabels[i], style: textStyle),
+        text: TextSpan(text: yAxisLabels[i], style: textStyle),
         textDirection: TextDirection.ltr,
       );
       textPainter.layout();
@@ -400,18 +567,15 @@ class ExpenseChartPainter extends CustomPainter {
     final path = Path();
     
     for (int i = 0; i < data.length; i++) {
-      final x = i * width / 6 + (width / 12);
+      final x = i * stepX + (stepX / 2);
       final y = height * 0.8 - data[i] * height * 0.8;
       
       if (i == 0) {
         path.moveTo(x, y);
       } else {
-        // Use quadratic bezier curve for smooth line
-        final prevX = (i - 1) * width / 6 + (width / 12);
+        final prevX = (i - 1) * stepX + (stepX / 2);
         final prevY = height * 0.8 - data[i - 1] * height * 0.8;
-        
         final controlX = (prevX + x) / 2;
-        
         path.quadraticBezierTo(controlX, prevY, x, y);
       }
     }
@@ -431,73 +595,29 @@ class ExpenseChartPainter extends CustomPainter {
     
     // Clone the path and close it for filling
     final fillPath = Path.from(path);
-    fillPath.lineTo(width / 12 + (5 * width / 6), height * 0.8);
-    fillPath.lineTo(width / 12, height * 0.8);
+    fillPath.lineTo((data.length - 1) * stepX + (stepX / 2), height * 0.8);
+    fillPath.lineTo(stepX / 2, height * 0.8);
     fillPath.close();
     
     canvas.drawPath(fillPath, fillPaint);
     
-    // Draw the highlighted point at the end of the line
-    final highlightPaint = Paint()
+    // Draw points on the line
+    final pointPaint = Paint()
       ..color = Color(0xFFAF4BCE)
       ..style = PaintingStyle.fill;
     
-    final lastX = 5 * width / 6 + (width / 12);
-    final lastY = height * 0.8 - data[5] * height * 0.8;
-    
-    canvas.drawCircle(Offset(lastX, lastY), 6, highlightPaint);
-    
-    // Draw border around highlight
-    final highlightBorderPaint = Paint()
+    final pointBorderPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     
-    canvas.drawCircle(Offset(lastX, lastY), 6, highlightBorderPaint);
-    
-    // Draw the "5K" label above the highlighted point
-    final labelPaint = TextPainter(
-      text: TextSpan(
-        text: '5K',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    
-    labelPaint.layout();
-    
-    // Draw label background
-    final labelBgPaint = Paint()
-      ..color = Color(0xFFAF4BCE)
-      ..style = PaintingStyle.fill;
-    
-    final labelWidth = labelPaint.width + 16;
-    final labelHeight = labelPaint.height + 8;
-    
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        lastX - labelWidth / 2,
-        lastY - labelHeight - 10,
-        labelWidth,
-        labelHeight,
-      ),
-      Radius.circular(10),
-    );
-    
-    canvas.drawRRect(rrect, labelBgPaint);
-    
-    // Draw label text
-    labelPaint.paint(
-      canvas,
-      Offset(
-        lastX - labelPaint.width / 2,
-        lastY - labelPaint.height - 14,
-      ),
-    );
+    for (int i = 0; i < data.length; i++) {
+      final x = i * stepX + (stepX / 2);
+      final y = height * 0.8 - data[i] * height * 0.8;
+      
+      canvas.drawCircle(Offset(x, y), 4, pointPaint);
+      canvas.drawCircle(Offset(x, y), 4, pointBorderPaint);
+    }
   }
   
   @override

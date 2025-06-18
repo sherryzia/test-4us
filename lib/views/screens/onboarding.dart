@@ -1,5 +1,4 @@
 import 'package:expensary/constants/colors.dart';
-import 'package:expensary/views/screens/home.dart';
 import 'package:expensary/views/screens/login_screen.dart';
 import 'package:expensary/views/screens/main_navigation_screen.dart';
 import 'package:expensary/views/widgets/my_Button.dart';

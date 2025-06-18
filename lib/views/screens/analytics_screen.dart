@@ -70,8 +70,8 @@ class AnalyticsScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF4A00E0),
-            Color(0xFF8E2DE2),
+           Color.fromARGB(255, 103, 0, 193),
+              Color.fromARGB(255, 63, 0, 117),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
