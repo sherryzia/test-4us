@@ -1,6 +1,7 @@
-// lib/views/widgets/custom_app_bar.dart
+// lib/views/widgets/custom_app_bar.dart - Updated with Profile Navigation
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/views/widgets/my_text.dart';
+import 'package:expensary/controllers/bottom_nav_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -134,7 +135,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildRightSection() {
     if (type == AppBarType.withProfile || type == AppBarType.withBackButtonAndProfile) {
       return GestureDetector(
-        onTap: onProfileTap,
+        onTap: onProfileTap ?? _defaultProfileTap,
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -163,6 +164,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     } else {
       // For AppBarType.withTitle or AppBarType.withBackButton
       return actionButton ?? Container(width: 40); // Empty container with same width as back button
+    }
+  }
+
+  // Default profile tap handler that navigates to profile tab
+  void _defaultProfileTap() {
+    try {
+      final BottomNavController controller = Get.find<BottomNavController>();
+      controller.changeTabIndex(3); // Navigate to profile tab (index 3)
+    } catch (e) {
+      // If controller is not found, just print debug info
+      print('BottomNavController not found: $e');
     }
   }
 

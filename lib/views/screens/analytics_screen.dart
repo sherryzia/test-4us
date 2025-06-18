@@ -21,14 +21,14 @@ class AnalyticsScreen extends StatelessWidget {
       appBar: CustomAppBar(
         title: 'Analytics',
         type: AppBarType.withProfile,
-        onProfileTap: () {
-          // Handle profile tap
-          Get.snackbar(
-            'Profile',
-            'Profile button tapped',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-        },
+        // onProfileTap: () {
+        //   // Handle profile tap
+        //   Get.snackbar(
+        //     'Profile',
+        //     'Profile button tapped',
+        //     snackPosition: SnackPosition.BOTTOM,
+        //   );
+        // },
         // Optional: Add an action button if needed
              ),
       body: SingleChildScrollView(

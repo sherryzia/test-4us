@@ -1,11 +1,12 @@
-// Updated lib/views/screens/main_navigation_screen.dart
+// lib/views/screens/main_navigation_screen.dart - Updated with Add Screens
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/bottom_nav_controller.dart';
 import 'package:expensary/views/screens/home_content.dart';
 import 'package:expensary/views/screens/analytics_screen.dart';
-import 'package:expensary/views/screens/add_expense_screen.dart'; // Import Add Expense screen
 import 'package:expensary/views/screens/statistics_screen.dart';
 import 'package:expensary/views/screens/profile_screen.dart';
+import 'package:expensary/views/screens/add_expense_screen.dart';
+import 'package:expensary/views/screens/add_income_screen.dart';
 import 'package:expensary/views/widgets/custom_bottom_navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,16 +21,17 @@ class MainNavigationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Obx(() {
-        // Include Add Expense screen directly in the index stack
-        // with a special index (we'll use 2 for Add Expense)
+        // Include all 6 screens in the IndexedStack with correct mapping
         return IndexedStack(
           index: controller.currentIndex.value,
           children: [
-            const HomeContent(),        // index 0 - Home screen content
-            const AnalyticsScreen(),    // index 1 - Analytics screen content
-            const AddExpenseScreen(),   // index 2 - Add Expense screen
-            const StatisticsScreen(),   // index 3 - Statistics screen
-            const ProfileScreen(),      // index 4 - Profile screen
+            
+             const HomeContent(),        // index 0 - Home screen content
+            const AnalyticsScreen(),    // index 1 - Analytics screen content  
+            const StatisticsScreen(),   // index 2 - Statistics screen (was index 3)
+            const ProfileScreen(),      // index 3 - Profile screen (was index 4)
+            const AddExpenseScreen(),   // index 4 - Add Expense screen
+            const AddIncomeScreen(),    // index 5 - Add Income screen
           ],
         );
       }),

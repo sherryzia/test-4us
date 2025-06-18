@@ -22,13 +22,13 @@ class StatisticsScreen extends StatelessWidget {
       appBar: CustomAppBar(
         title: 'Statistics',
         type: AppBarType.withProfile,
-        onProfileTap: () {
-          Get.snackbar(
-            'Profile',
-            'Profile button tapped',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-        },
+        // onProfileTap: () {
+        //   Get.snackbar(
+        //     'Profile',
+        //     'Profile button tapped',
+        //     snackPosition: SnackPosition.BOTTOM,
+        //   );
+        // },
       ),
       body: SingleChildScrollView(
         physics: BouncingScrollPhysics(),

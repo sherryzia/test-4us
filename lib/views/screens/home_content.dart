@@ -1,4 +1,4 @@
-// views/screens/home_content.dart (Updated)
+// lib/views/screens/home_content.dart - Updated (Remove Quick Action Buttons)
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/controllers/home_controller.dart';
@@ -20,13 +20,13 @@ class HomeContent extends StatelessWidget {
       appBar: CustomAppBar(
         title: 'Home',
         type: AppBarType.withProfile,
-        onProfileTap: () {
-          Get.snackbar(
-            'Profile',
-            'Profile button tapped',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-        },
+        // onProfileTap: () {
+        //   Get.snackbar(
+        //     'Profile',
+        //     'Profile button tapped',
+        //     snackPosition: SnackPosition.BOTTOM,
+        //   );
+        // },
       ),
       body: Column(
         children: [
@@ -90,15 +90,15 @@ class HomeContent extends StatelessWidget {
                     
                     const SizedBox(height: 30),
                     
-                    // Expenses Section Header
-                    _buildExpensesHeader(),
+                    // Transactions Section Header
+                    _buildTransactionsHeader(),
                     
                     const SizedBox(height: 20),
                     
-                    // Expenses List
+                    // Transactions List (Income + Expenses)
                     Obx(() => Column(
-                      children: controller.expenses.map((expense) => 
-                        _buildExpenseItem(expense)
+                      children: controller.expenses.map((transaction) => 
+                        _buildTransactionItem(transaction)
                       ).toList(),
                     )),
                     
@@ -117,14 +117,15 @@ class HomeContent extends StatelessWidget {
     return Obx(() {
       final currentTip = controller.currentTip;
       
+      if (currentTip == null) {
+        return Container();
+      }
+      
       return GestureDetector(
         onHorizontalDragEnd: (details) {
-          // Handle swipe gestures
           if (details.primaryVelocity! > 0) {
-            // Swiped right (previous tip)
             controller.goToPreviousTip();
           } else if (details.primaryVelocity! < 0) {
-            // Swiped left (next tip)
             controller.goToNextTip();
           }
         },
@@ -173,7 +174,6 @@ class HomeContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with navigation dots
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -193,7 +193,6 @@ class HomeContent extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Navigation dots
                     Row(
                       children: List.generate(
                         controller.tips.length,
@@ -215,9 +214,8 @@ class HomeContent extends StatelessWidget {
                 
                 const SizedBox(height: 16),
                 
-                // Tip title
                 MyText(
-                  text: currentTip!.title,
+                  text: currentTip.title,
                   size: 18,
                   weight: FontWeight.bold,
                   color: kwhite,
@@ -226,7 +224,6 @@ class HomeContent extends StatelessWidget {
                 
                 const SizedBox(height: 8),
                 
-                // Tip description
                 MyText(
                   text: currentTip.description,
                   size: 14,
@@ -236,8 +233,6 @@ class HomeContent extends StatelessWidget {
                 
                 const SizedBox(height: 16),
                 
-                
-                // Swipe indicator
                 Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -264,34 +259,35 @@ class HomeContent extends StatelessWidget {
     });
   }
 
-  Widget _buildExpensesHeader() {
+  Widget _buildTransactionsHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         MyText(
-          text: 'Expenses',
+          text: 'Recent Transactions',
           size: 24,
           weight: FontWeight.bold,
           color: kwhite,
         ),
-        GestureDetector(
-          onTap: () {
-            Get.snackbar('Navigation', 'See all expenses');
-          },
-          child: MyText(
-            text: 'See all',
-            size: 16,
-            weight: FontWeight.w500,
-            color: kblue,
-          ),
-        ),
+        // GestureDetector(
+        //   onTap: () {
+        //     Get.snackbar('Navigation', 'See all transactions');
+        //   },
+        //   child: MyText(
+        //     text: 'See all',
+        //     size: 16,
+        //     weight: FontWeight.w500,
+        //     color: kblue,
+        //   ),
+        // ),
       ],
     );
   }
 
-  Widget _buildExpenseItem(ExpenseItem expense) {
-    IconData iconData = _getIconData(expense.iconData);
-    Color iconBg = expense.iconBg == 'white' ? kwhite : kblack;
+  Widget _buildTransactionItem(ExpenseItem transaction) {
+    IconData iconData = _getIconData(transaction.iconData);
+    Color iconBg = _getIconBgColor(transaction.iconBg);
+    bool isIncome = transaction.amount > 0;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -319,15 +315,35 @@ class HomeContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MyText(
-                  text: expense.title,
-                  size: 16,
-                  weight: FontWeight.w600,
-                  color: kwhite,
+                Row(
+                  children: [
+                    MyText(
+                      text: transaction.title,
+                      size: 16,
+                      weight: FontWeight.w600,
+                      color: kwhite,
+                    ),
+                    if (isIncome) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: kgreen.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: MyText(
+                          text: 'Income',
+                          size: 10,
+                          color: kgreen,
+                          weight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 MyText(
-                  text: expense.date,
+                  text: transaction.date,
                   size: 14,
                   color: kwhite.withOpacity(0.6),
                 ),
@@ -337,10 +353,10 @@ class HomeContent extends StatelessWidget {
           
           // Amount
           MyText(
-            text: '${expense.amount > 0 ? '+' : ''}₨${_formatCurrency(expense.amount.abs())}',
+            text: '${isIncome ? '+' : ''}₨${_formatCurrency(transaction.amount.abs())}',
             size: 16,
             weight: FontWeight.bold,
-            color: expense.amount > 0 ? kgreen : kred,
+            color: isIncome ? kgreen : kred,
           ),
         ],
       ),
@@ -349,6 +365,26 @@ class HomeContent extends StatelessWidget {
 
   IconData _getIconData(String iconName) {
     switch (iconName) {
+      case 'work':
+        return Icons.work;
+      case 'laptop':
+        return Icons.laptop;
+      case 'business':
+        return Icons.business;
+      case 'trending_up':
+        return Icons.trending_up;
+      case 'home':
+        return Icons.home;
+      case 'card_giftcard':
+        return Icons.card_giftcard;
+      case 'percent':
+        return Icons.percent;
+      case 'work_outline':
+        return Icons.work_outline;
+      case 'savings':
+        return Icons.savings;
+      case 'attach_money':
+        return Icons.attach_money;
       case 'sports_basketball':
         return Icons.sports_basketball;
       case 'apple':
@@ -365,6 +401,39 @@ class HomeContent extends StatelessWidget {
         return Icons.credit_card;
       default:
         return Icons.shopping_bag;
+    }
+  }
+
+  Color _getIconBgColor(String colorName) {
+    switch (colorName) {
+      case 'blue':
+        return kblue;
+      case 'green':
+        return kgreen;
+      case 'purple':
+        return kpurple;
+      case 'orange':
+        return korange;
+      case 'red':
+        return kred;
+      case 'teal':
+        return Colors.teal;
+      case 'pink':
+        return Colors.pink;
+      case 'indigo':
+        return Colors.indigo;
+      case 'amber':
+        return Colors.amber;
+      case 'cyan':
+        return Colors.cyan;
+      case 'grey':
+        return kgrey;
+      case 'white':
+        return kwhite;
+      case 'black':
+        return kblack;
+      default:
+        return kblack;
     }
   }
 

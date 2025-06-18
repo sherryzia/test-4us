@@ -1,6 +1,6 @@
-// lib/views/screens/add_expense_screen.dart - Updated with Navigation
+// lib/views/screens/add_income_screen.dart - Updated with Navigation
 import 'package:expensary/constants/colors.dart';
-import 'package:expensary/controllers/add_expense_controller.dart';
+import 'package:expensary/controllers/add_income_controller.dart';
 import 'package:expensary/controllers/bottom_nav_controller.dart';
 import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/views/widgets/my_text.dart';
@@ -8,18 +8,18 @@ import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class AddExpenseScreen extends StatelessWidget {
-  const AddExpenseScreen({Key? key}) : super(key: key);
+class AddIncomeScreen extends StatelessWidget {
+  const AddIncomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final AddExpenseController controller = Get.put(AddExpenseController());
+    final AddIncomeController controller = Get.put(AddIncomeController());
     final BottomNavController navController = Get.find<BottomNavController>();
     
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: CustomAppBar(
-        title: 'Add Expenses',
+        title: 'Add Income',
         type: AppBarType.withBackButton,
         hasUnderline: true,
         onBackTap: () {
@@ -41,7 +41,6 @@ class AddExpenseScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Enhanced Form Content
             Expanded(
               child: SingleChildScrollView(
                 physics: BouncingScrollPhysics(),
@@ -51,7 +50,7 @@ class AddExpenseScreen extends StatelessWidget {
                     children: [
                       const SizedBox(height: 30),
                       
-                      // Enhanced Transaction Section
+                      // Transaction Section
                       _buildEnhancedSection(
                         title: 'TRANSACTION',
                         icon: Icons.schedule,
@@ -65,18 +64,11 @@ class AddExpenseScreen extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: kwhite.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: kwhite.withOpacity(0.1),
-                                      width: 1,
-                                    ),
+                                    border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.access_time,
-                                        color: kblue,
-                                        size: 20,
-                                      ),
+                                      Icon(Icons.access_time, color: kblue, size: 20),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: MyText(
@@ -104,18 +96,11 @@ class AddExpenseScreen extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: kwhite.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: kwhite.withOpacity(0.1),
-                                      width: 1,
-                                    ),
+                                    border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.calendar_today,
-                                        color: kgreen,
-                                        size: 20,
-                                      ),
+                                      Icon(Icons.calendar_today, color: kgreen, size: 20),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: MyText(
@@ -138,31 +123,23 @@ class AddExpenseScreen extends StatelessWidget {
                         ),
                       ),
                       
-                      // Rest of the form fields...
                       const SizedBox(height: 24),
                       
-                      // Added Merchant/Title Field
+                      // Source Field
                       _buildEnhancedSection(
-                        title: 'MERCHANT',
-                        icon: Icons.store,
+                        title: 'INCOME SOURCE',
+                        icon: Icons.work,
                         child: Container(
                           decoration: BoxDecoration(
                             color: kwhite.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: kwhite.withOpacity(0.1),
-                              width: 1,
-                            ),
+                            border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
                           ),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(16),
-                                child: Icon(
-                                  Icons.storefront,
-                                  color: korange,
-                                  size: 24,
-                                ),
+                                child: Icon(Icons.attach_money, color: kgreen, size: 24),
                               ),
                               Expanded(
                                 child: TextFormField(
@@ -174,7 +151,7 @@ class AddExpenseScreen extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: 'Enter merchant name',
+                                    hintText: 'e.g., Salary, Freelance, Business',
                                     hintStyle: TextStyle(
                                       color: kwhite.withOpacity(0.6),
                                       fontSize: 18,
@@ -192,22 +169,22 @@ class AddExpenseScreen extends StatelessWidget {
                       
                       const SizedBox(height: 24),
                       
-                      // Enhanced Category Section
+                      // Income Type Section
                       _buildEnhancedSection(
-                        title: 'CATEGORY',
+                        title: 'INCOME TYPE',
                         icon: Icons.category,
                         child: Obx(() => _buildEnhancedDropdownField(
-                          value: controller.selectedCategory.value,
-                          items: controller.categories,
-                          onChanged: controller.changeCategory,
-                          icon: Icons.shopping_bag,
-                          color: kpurple,
+                          value: controller.selectedIncomeType.value,
+                          items: controller.incomeTypes,
+                          onChanged: controller.changeIncomeType,
+                          icon: Icons.trending_up,
+                          color: kgreen,
                         )),
                       ),
                       
                       const SizedBox(height: 24),
                       
-                      // Enhanced Amount Section
+                      // Amount Section
                       _buildEnhancedSection(
                         title: 'AMOUNT',
                         icon: Icons.currency_rupee,
@@ -215,20 +192,13 @@ class AddExpenseScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: kwhite.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: kwhite.withOpacity(0.1),
-                              width: 1,
-                            ),
+                            border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
                           ),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(16),
-                                child: Icon(
-                                  Icons.currency_rupee,
-                                  color: kgreen,
-                                  size: 24,
-                                ),
+                                child: Icon(Icons.currency_rupee, color: kgreen, size: 24),
                               ),
                               Expanded(
                                 child: TextFormField(
@@ -240,7 +210,7 @@ class AddExpenseScreen extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: '2,999',
+                                    hintText: '50,000',
                                     hintStyle: TextStyle(
                                       color: kwhite.withOpacity(0.6),
                                       fontSize: 18,
@@ -258,7 +228,7 @@ class AddExpenseScreen extends StatelessWidget {
                       
                       const SizedBox(height: 24),
                       
-                      // Enhanced Currency Section
+                      // Currency Section
                       _buildEnhancedSection(
                         title: 'CURRENCY',
                         icon: Icons.attach_money,
@@ -273,49 +243,46 @@ class AddExpenseScreen extends StatelessWidget {
                       
                       const SizedBox(height: 24),
                       
-                      // Enhanced Payment Method Section
+                      // Payment Method Section
                       _buildEnhancedSection(
-                        title: 'PAYMENT METHOD',
+                        title: 'RECEIVED VIA',
                         icon: Icons.payment,
                         child: Obx(() => _buildEnhancedDropdownField(
                           value: controller.selectedPaymentMethod.value,
                           items: controller.paymentMethods,
                           onChanged: controller.changePaymentMethod,
-                          icon: Icons.credit_card,
-                          color: korange,
+                          icon: Icons.account_balance_wallet,
+                          color: kpurple,
                         )),
                       ),
                       
                       const SizedBox(height: 50),
                       
-                      // Updated Save Button - now navigates back to home screen
+                      // Save Button
                       MyButton(
                         onTap: () async {
-                          // Save the expense
-                          await controller.saveExpense();
-                          
-                          // Navigate back to home screen (index 0)
+                          await controller.saveIncome();
+                          // Navigate back to home screen
                           navController.changeTabIndex(0);
                         },
-                        buttonText: 'Save Expense',
+                        buttonText: 'Save Income',
                         width: 200,
                         height: 56,
-                        fillColor: Color(0xFF8E2DE2),
+                        fillColor: kgreen,
                         fontColor: kwhite,
                         fontSize: 18,
                         radius: 28,
                         hasgrad: true,
                         fontWeight: FontWeight.w600,
-                        icon: Icons.save,
+                        icon: Icons.savings,
                         iconPosition: IconPosition.left,
                       ),
                       
                       const SizedBox(height: 20),
                       
-                      // Cancel Button - navigate back to home
+                      // Cancel Button
                       MyButton(
                         onTap: () {
-                          // Navigate back to home
                           navController.changeTabIndex(0);
                         },
                         buttonText: 'Cancel',
@@ -341,7 +308,6 @@ class AddExpenseScreen extends StatelessWidget {
     );
   }
   
-  // Helper method remains the same...
   Widget _buildEnhancedSection({
     required String title,
     required IconData icon,
@@ -368,10 +334,7 @@ class AddExpenseScreen extends StatelessWidget {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: kwhite.withOpacity(0.15),
-                  width: 1,
-                ),
+                border: Border.all(color: kwhite.withOpacity(0.15), width: 1),
                 boxShadow: [
                   BoxShadow(
                     color: kblack.withOpacity(0.3),
@@ -392,11 +355,7 @@ class AddExpenseScreen extends StatelessWidget {
                           color: kwhite.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(
-                          icon,
-                          color: kwhite.withOpacity(0.8),
-                          size: 16,
-                        ),
+                        child: Icon(icon, color: kwhite.withOpacity(0.8), size: 16),
                       ),
                       const SizedBox(width: 12),
                       MyText(
@@ -431,10 +390,7 @@ class AddExpenseScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: kwhite.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: kwhite.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
       ),
       child: Row(
         children: [
@@ -444,11 +400,7 @@ class AddExpenseScreen extends StatelessWidget {
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 18,
-            ),
+            child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -466,11 +418,7 @@ class AddExpenseScreen extends StatelessWidget {
                 color: kwhite.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.keyboard_arrow_down,
-                color: kwhite.withOpacity(0.8),
-                size: 20,
-              ),
+              child: Icon(Icons.keyboard_arrow_down, color: kwhite.withOpacity(0.8), size: 20),
             ),
             color: kblack2.withOpacity(0.95),
             shape: RoundedRectangleBorder(
@@ -492,11 +440,7 @@ class AddExpenseScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       if (item == value)
-                        Icon(
-                          Icons.check_circle,
-                          color: color,
-                          size: 18,
-                        ),
+                        Icon(Icons.check_circle, color: color, size: 18),
                       if (item == value) const SizedBox(width: 12),
                       MyText(
                         text: item,

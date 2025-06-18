@@ -1,4 +1,4 @@
-// Updated views/widgets/custom_bottom_navbar.dart
+// lib/views/widgets/custom_bottom_navbar.dart - Fixed with correct indexing
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/bottom_nav_controller.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +15,7 @@ class CustomBottomNavBar extends StatelessWidget {
       height: 80,
       child: Stack(
         alignment: Alignment.bottomCenter,
-        clipBehavior: Clip.none, // This prevents clipping of children
+        clipBehavior: Clip.none,
         children: [
           // Bottom navigation background
           Positioned.fill(
@@ -44,66 +44,62 @@ class CustomBottomNavBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // First two items
+                // Home (index 0)
                 _buildNavItem(controller, 0),
+                // Analytics (index 1)
                 _buildNavItem(controller, 1),
                 
                 // Center placeholder for FAB
                 Container(width: 60),
                 
-                // Last two items
-                _buildNavItem(controller, 2), // These are indices 2 and 3 in navItems
-                _buildNavItem(controller, 3), // But will map to 3 and 4 in the IndexedStack
+                // Statistics (index 2)
+                _buildNavItem(controller, 2),
+                // Profile (index 3)
+                _buildNavItem(controller, 3),
               ],
             ),
           ),
           
-          // Add Expense FAB - positioned outside of the clipping boundary
+          // Add Transaction FAB - positioned outside of the clipping boundary
           Positioned(
-            top: -25, // Position it to overlap the navbar without getting clipped
-            child: Obx(() {
-              // Check if we're on the Add Expense screen (index 2)
-              final bool isOnAddExpense = controller.currentIndex.value == 2;
-              
-              return GestureDetector(
-                onTap: () => controller.navigateToAddExpense(),
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF8E2DE2),
-                        Color(0xFF4A00E0),
-                        Color(0xFF6A1B9A),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFF8E2DE2).withOpacity(0.4),
-                        blurRadius: 25,
-                        offset: Offset(0, 5),
-                        spreadRadius: 2,
-                      ),
-                      BoxShadow(
-                        color: Color(0xFF4A00E0).withOpacity(0.3),
-                        blurRadius: 15,
-                        offset: Offset(0, 8),
-                      ),
+            top: -25,
+            child: GestureDetector(
+              onTap: () => controller.showAddOptionsBottomSheet(),
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF8E2DE2),
+                      Color(0xFF4A00E0),
+                      Color(0xFF6A1B9A),
                     ],
                   ),
-                  child: Icon(
-                    Icons.add,
-                    // Change color or size when active
-                    color: isOnAddExpense ? Colors.yellow : kwhite,
-                    size: isOnAddExpense ? 38 : 35,
-                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF8E2DE2).withOpacity(0.4),
+                      blurRadius: 25,
+                      offset: Offset(0, 5),
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: Color(0xFF4A00E0).withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
                 ),
-              );
-            }),
+                child: Icon(
+                  Icons.add,
+                  color: kwhite,
+                  size: 32,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -111,14 +107,28 @@ class CustomBottomNavBar extends StatelessWidget {
   }
   
   Widget _buildNavItem(BottomNavController controller, int index) {
-    BottomNavItem item = controller.navItems[index == 3 ? 4 : (index == 2 ? 3 : index)];
-    
-    // Skip middle item (index 2 in navItems)
-    if (item.icon == null) return Container(width: 0);
+    // Get the correct nav item based on index
+    BottomNavItem item;
+    switch (index) {
+      case 0:
+        item = controller.navItems[0]; // Home
+        break;
+      case 1:
+        item = controller.navItems[1]; // Analytics
+        break;
+      case 2:
+        item = controller.navItems[3]; // Statistics (skip the null item at index 2)
+        break;
+      case 3:
+        item = controller.navItems[4]; // Profile
+        break;
+      default:
+        item = controller.navItems[0];
+    }
     
     return Obx(() {
-      // Check if this tab is selected and we're not on the Add Expense screen
-      bool isActive = controller.selectedTabIndex.value == index && controller.currentIndex.value != 2;
+      // Check if this tab is selected
+      bool isActive = controller.selectedTabIndex.value == index;
       
       return GestureDetector(
         onTap: () => controller.changeTabIndex(index),

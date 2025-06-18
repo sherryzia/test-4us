@@ -1,10 +1,10 @@
-// Updated lib/views/screens/profile_screen.dart
+// lib/views/screens/profile_screen.dart - Updated
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/profile_controller.dart';
 import 'package:expensary/views/screens/about_screen.dart';
 import 'package:expensary/views/screens/faqs_screen.dart';
 import 'package:expensary/views/screens/help_support_screen.dart';
-import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
+import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:expensary/views/widgets/my_textfield.dart';
@@ -20,34 +20,31 @@ class ProfileScreen extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: backgroundColor,
-      // Using the custom app bar with title and options button
       appBar: CustomAppBar(
-  title: 'Profile',
-  type: AppBarType.withTitle, // Keep this as is - withTitle puts title on left
-  // Remove the actionButton parameter entirely
-  // And instead add this parameter for the right side button:
-  actionButton: GestureDetector(
-    onTap: () {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        builder: (context) => _buildOptionsMenu(controller),
-      );
-    },
-    child: Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: kwhite.withOpacity(0.1),
-        shape: BoxShape.circle,
+        title: 'Profile',
+        type: AppBarType.withTitle,
+        actionButton: GestureDetector(
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              builder: (context) => _buildOptionsMenu(controller),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: kwhite.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.more_vert,
+              color: kwhite,
+              size: 24,
+            ),
+          ),
+        ),
       ),
-      child: Icon(
-        Icons.more_vert,
-        color: kwhite,
-        size: 24,
-      ),
-    ),
-  ),
-),
       body: SingleChildScrollView(
         physics: BouncingScrollPhysics(),
         child: Padding(
@@ -61,22 +58,34 @@ class ProfileScreen extends StatelessWidget {
               
               const SizedBox(height: 30),
               
-              // Profile Information Sections
+              // Personal Information Section
               _buildPersonalInfoSection(controller),
               
               const SizedBox(height: 20),
               
+              // Financial Settings Section
+              _buildFinancialSection(controller),
+              
+              const SizedBox(height: 20),
+              
+              // Password Section
               _buildPasswordSection(controller),
               
               const SizedBox(height: 20),
               
+              // Currency Section
               _buildCurrencySection(controller),
+              
+              const SizedBox(height: 20),
+              
+              // Danger Zone Section
+              _buildDangerZoneSection(controller),
               
               const SizedBox(height: 40),
               
               // Logout Button
-              MyButton(
-                onTap: controller.logout,
+              Obx(() => MyButton(
+                onTap: controller.isLoading.value ? null : controller.logout,
                 buttonText: 'Log Out',
                 width: double.infinity,
                 height: 56,
@@ -87,9 +96,10 @@ class ProfileScreen extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 icon: Icons.logout,
                 iconPosition: IconPosition.left,
-              ),
+                isLoading: controller.isLoading.value,
+              )),
               
-              const SizedBox(height: 100), // Space for bottom navigation
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -102,7 +112,6 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Stack(
           children: [
-            // Profile Image
             Container(
               width: 120,
               height: 120,
@@ -133,13 +142,11 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             
-            // Edit Button
             Positioned(
               bottom: 0,
               right: 0,
               child: GestureDetector(
                 onTap: () {
-                  // Show image selection options
                   showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.transparent,
@@ -172,10 +179,9 @@ class ProfileScreen extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // User Name
         GetX<ProfileController>(
           builder: (controller) => MyText(
-            text: controller.name.value,
+            text: controller.name.value.isNotEmpty ? controller.name.value : 'User',
             size: 24,
             weight: FontWeight.bold,
             color: kwhite,
@@ -184,10 +190,9 @@ class ProfileScreen extends StatelessWidget {
         
         const SizedBox(height: 4),
         
-        // User Email
         GetX<ProfileController>(
           builder: (controller) => MyText(
-            text: controller.email.value,
+            text: controller.email.value.isNotEmpty ? controller.email.value : 'No email',
             size: 16,
             color: kwhite.withOpacity(0.7),
           ),
@@ -215,22 +220,68 @@ class ProfileScreen extends StatelessWidget {
           
           const SizedBox(height: 20),
           
-          // Name Field
           MyTextField(
-            label: 'Name',
+            label: 'Full Name',
             controller: controller.nameController,
-            prefixIcon: Icon(Icons.person),
-            bordercolor: kpurple,
+            prefixIcon: Icon(Icons.person, color: kwhite.withOpacity(0.7)),
+            bordercolor: kpurple.withOpacity(0.3),
+            filledColor: kwhite.withOpacity(0.05),
+            hintColor: kwhite.withOpacity(0.5),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildFinancialSection(ProfileController controller) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Color(0xFF2A2D40),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText(
+            text: 'Financial Settings',
+            size: 18,
+            weight: FontWeight.bold,
+            color: kwhite,
           ),
           
-        
           const SizedBox(height: 20),
           
-          // Save Button
+          // Monthly Income Field
+          MyTextField(
+            label: 'Monthly Income',
+            controller: controller.incomeController,
+            prefixIcon: Icon(Icons.trending_up, color: kgreen),
+            keyboardType: TextInputType.number,
+            bordercolor: kgreen.withOpacity(0.3),
+            filledColor: kwhite.withOpacity(0.05),
+            hintColor: kwhite.withOpacity(0.5),
+            hint: 'Enter your monthly income',
+          ),
+          
+          // Monthly Budget Field
+          MyTextField(
+            label: 'Monthly Budget',
+            controller: controller.budgetController,
+            prefixIcon: Icon(Icons.account_balance_wallet, color: kblue),
+            keyboardType: TextInputType.number,
+            bordercolor: kblue.withOpacity(0.3),
+            filledColor: kwhite.withOpacity(0.05),
+            hintColor: kwhite.withOpacity(0.5),
+            hint: 'Enter your monthly budget',
+          ),
+          
+          const SizedBox(height: 20),
+          
           Center(
-            child: MyButton(
-              onTap: controller.updateName,
-              buttonText: 'Save Changes',
+            child: Obx(() => MyButton(
+              onTap: controller.isLoading.value ? null : controller.updateProfile,
+              buttonText: controller.isLoading.value ? 'Updating...' : 'Update Profile',
               width: 200,
               height: 46,
               fillColor: Color(0xFFAF4BCE),
@@ -238,7 +289,8 @@ class ProfileScreen extends StatelessWidget {
               fontSize: 16,
               radius: 23,
               fontWeight: FontWeight.w600,
-            ),
+              isLoading: controller.isLoading.value,
+            )),
           ),
         ],
       ),
@@ -246,115 +298,98 @@ class ProfileScreen extends StatelessWidget {
   }
   
   Widget _buildPasswordSection(ProfileController controller) {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: const Color(0xFF2A2D40),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        MyText(
-          text: 'Change Password',
-          size: 18,
-          weight: FontWeight.bold,
-          color: kwhite,
-        ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2D40),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText(
+            text: 'Change Password',
+            size: 18,
+            weight: FontWeight.bold,
+            color: kwhite,
+          ),
 
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Current Password
-        MyTextField(
-          label: 'Current Password',
-          hint: '••••••••',
-          isObSecure: true,
-          suffixIcon: 
-          IconButton(
-            icon: Icon(
-              controller.isCurrentPasswordVisible.value
-                  ? Icons.visibility
-                  : Icons.visibility_off,
+          Obx(() => MyTextField(
+            label: 'Current Password',
+            hint: '••••••••',
+            isObSecure: !controller.isCurrentPasswordVisible.value,
+            suffixIcon: IconButton(
+              icon: Icon(
+                controller.isCurrentPasswordVisible.value
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+                color: kwhite.withOpacity(0.7),
+              ),
+              onPressed: () => controller.isCurrentPasswordVisible.toggle(),
             ),
-            onPressed: () {
-              controller.isCurrentPasswordVisible.toggle();
-            },
-          ),
-            bordercolor: kpurple,
+            bordercolor: kpurple.withOpacity(0.3),
+            filledColor: kwhite.withOpacity(0.05),
+            controller: controller.currentPasswordController,
+          )),
 
-          suffixTap: () {
-            controller.isCurrentPasswordVisible.toggle();
-          },
-          controller: controller.currentPasswordController,
-        ),
-
-        // New Password
-        MyTextField(
-          label: 'New Password',
-          hint: '••••••••',
-          isObSecure: true,            bordercolor: kpurple,
-
-suffixIcon: 
-          IconButton(
-            icon: Icon(
-              controller.isNewPasswordVisible.value
-                  ? Icons.visibility
-                  : Icons.visibility_off,
+          Obx(() => MyTextField(
+            label: 'New Password',
+            hint: '••••••••',
+            isObSecure: !controller.isNewPasswordVisible.value,
+            suffixIcon: IconButton(
+              icon: Icon(
+                controller.isNewPasswordVisible.value
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+                color: kwhite.withOpacity(0.7),
+              ),
+              onPressed: () => controller.isNewPasswordVisible.toggle(),
             ),
-            onPressed: () {
-              controller.isNewPasswordVisible.toggle();
-            },
-          ),
+            bordercolor: kpurple.withOpacity(0.3),
+            filledColor: kwhite.withOpacity(0.05),
+            controller: controller.newPasswordController,
+          )),
 
-          suffixTap: () {
-            controller.isNewPasswordVisible.toggle();
-          },
-          controller: controller.newPasswordController,
-        ),
-
-        // Confirm Password
-        MyTextField(
-          label: 'Confirm New Password',
-          hint: '••••••••',
-          isObSecure: true,            bordercolor: kpurple,
-
-          suffixIcon: IconButton(
-            icon: Icon(
-              controller.isConfirmPasswordVisible.value
-                  ? Icons.visibility
-                  : Icons.visibility_off,
+          Obx(() => MyTextField(
+            label: 'Confirm New Password',
+            hint: '••••••••',
+            isObSecure: !controller.isConfirmPasswordVisible.value,
+            suffixIcon: IconButton(
+              icon: Icon(
+                controller.isConfirmPasswordVisible.value
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+                color: kwhite.withOpacity(0.7),
+              ),
+              onPressed: () => controller.isConfirmPasswordVisible.toggle(),
             ),
-            onPressed: () {
-              controller.isConfirmPasswordVisible.toggle();
-            },
+            bordercolor: kpurple.withOpacity(0.3),
+            filledColor: kwhite.withOpacity(0.05),
+            controller: controller.confirmPasswordController,
+          )),
+
+          const SizedBox(height: 20),
+
+          Center(
+            child: Obx(() => MyButton(
+              onTap: controller.isLoading.value ? null : controller.updatePassword,
+              buttonText: controller.isLoading.value ? 'Updating...' : 'Update Password',
+              width: 200,
+              height: 46,
+              fillColor: const Color(0xFFAF4BCE),
+              fontColor: kwhite,
+              fontSize: 16,
+              radius: 23,
+              fontWeight: FontWeight.w600,
+              isLoading: controller.isLoading.value,
+            )),
           ),
-          suffixTap: () {
-            controller.isConfirmPasswordVisible.toggle();
-          },
-          controller: controller.confirmPasswordController,
-        ),
-
-        const SizedBox(height: 20),
-
-        // Update Button
-        Center(
-          child: MyButton(
-            onTap: controller.updatePassword,
-            buttonText: 'Update Password',
-            width: 200,
-            height: 46,
-            fillColor: const Color(0xFFAF4BCE),
-            fontColor: kwhite,
-            fontSize: 16,
-            radius: 23,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
   
   Widget _buildCurrencySection(ProfileController controller) {
     return Container(
@@ -375,7 +410,6 @@ suffixIcon:
           
           const SizedBox(height: 20),
           
-          // Currency Selection
           GetX<ProfileController>(
             builder: (controller) => Column(
               children: controller.currencies.map((currency) => 
@@ -425,6 +459,67 @@ suffixIcon:
     );
   }
   
+  Widget _buildDangerZoneSection(ProfileController controller) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Color(0xFF2A2D40),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: kred.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning,
+                color: kred,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              MyText(
+                text: 'Danger Zone',
+                size: 18,
+                weight: FontWeight.bold,
+                color: kred,
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          MyText(
+            text: 'These actions are irreversible. Please be careful.',
+            size: 14,
+            color: kwhite.withOpacity(0.7),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          Obx(() => MyButton(
+            onTap: controller.isLoading.value ? null : controller.resetAllExpenses,
+            buttonText: controller.isLoading.value ? 'Resetting...' : 'Reset All Expenses',
+            width: double.infinity,
+            height: 46,
+            fillColor: Colors.transparent,
+            outlineColor: kred,
+            fontColor: kred,
+            fontSize: 16,
+            radius: 23,
+            fontWeight: FontWeight.w600,
+            icon: Icons.delete_forever,
+            iconPosition: IconPosition.left,
+            isLoading: controller.isLoading.value,
+          )),
+        ],
+      ),
+    );
+  }
+  
   Widget _buildImageSelectionMenu() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -455,11 +550,7 @@ suffixIcon:
                 label: 'Camera',
                 onTap: () {
                   Get.back();
-                  Get.snackbar(
-                    'Camera',
-                    'Opening camera...',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
+                  Get.snackbar('Camera', 'Opening camera...');
                 },
               ),
               _buildImageOptionButton(
@@ -467,11 +558,7 @@ suffixIcon:
                 label: 'Gallery',
                 onTap: () {
                   Get.back();
-                  Get.snackbar(
-                    'Gallery',
-                    'Opening gallery...',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
+                  Get.snackbar('Gallery', 'Opening gallery...');
                 },
               ),
               _buildImageOptionButton(
@@ -479,11 +566,7 @@ suffixIcon:
                 label: 'Remove',
                 onTap: () {
                   Get.back();
-                  Get.snackbar(
-                    'Remove',
-                    'Profile picture removed',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
+                  Get.snackbar('Remove', 'Profile picture removed');
                 },
               ),
             ],
@@ -524,95 +607,82 @@ suffixIcon:
               color: kwhite.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: kwhite,
-              size: 30,
-            ),
+            child: Icon(icon, color: kwhite, size: 30),
           ),
-          
           const SizedBox(height: 8),
-          
-          MyText(
-            text: label,
-            size: 14,
-            color: kwhite,
-          ),
+          MyText(text: label, size: 14, color: kwhite),
         ],
       ),
     );
   }
   
   Widget _buildOptionsMenu(ProfileController controller) {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Color(0xFF2A2D40),
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Color(0xFF2A2D40),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
       ),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        MyText(
-          text: 'Options',
-          size: 18,
-          weight: FontWeight.bold,
-          color: kwhite,
-        ),
-        
-        const SizedBox(height: 20),
-        
-        // FAQs
-        _buildOptionItem(
-          icon: Icons.help_outline,
-          label: 'FAQs',
-          onTap: () {
-            Get.back();
-            Get.to(() => FAQsScreen());
-          },
-        ),
-        
-        // Help & Support
-        _buildOptionItem(
-          icon: Icons.support_agent,
-          label: 'Help & Support',
-          onTap: () {
-            Get.back();
-            Get.to(() => HelpSupportScreen());
-          },
-        ),
-        
-        // About
-        _buildOptionItem(
-          icon: Icons.info_outline,
-          label: 'About',
-          onTap: () {
-            Get.back();
-            Get.to(() => AboutScreen());
-          },
-        ),
-        
-        const SizedBox(height: 10),
-        
-        MyButton(
-          onTap: () => Get.back(),
-          buttonText: 'Cancel',
-          width: double.infinity,
-          height: 46,
-          fillColor: Colors.transparent,
-          outlineColor: kwhite.withOpacity(0.2),
-          fontColor: kwhite,
-          fontSize: 16,
-          radius: 23,
-          fontWeight: FontWeight.w600,
-        ),
-      ],
-    ),
-  );
-}
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MyText(
+            text: 'Options',
+            size: 18,
+            weight: FontWeight.bold,
+            color: kwhite,
+          ),
+          
+          const SizedBox(height: 20),
+          
+          _buildOptionItem(
+            icon: Icons.help_outline,
+            label: 'FAQs',
+            onTap: () {
+              Get.back();
+              Get.to(() => FAQsScreen());
+            },
+          ),
+          
+          _buildOptionItem(
+            icon: Icons.support_agent,
+            label: 'Help & Support',
+            onTap: () {
+              Get.back();
+              Get.to(() => HelpSupportScreen());
+            },
+          ),
+          
+          _buildOptionItem(
+            icon: Icons.info_outline,
+            label: 'About',
+            onTap: () {
+              Get.back();
+              Get.to(() => AboutScreen());
+            },
+          ),
+          
+          const SizedBox(height: 10),
+          
+          MyButton(
+            onTap: () => Get.back(),
+            buttonText: 'Cancel',
+            width: double.infinity,
+            height: 46,
+            fillColor: Colors.transparent,
+            outlineColor: kwhite.withOpacity(0.2),
+            fontColor: kwhite,
+            fontSize: 16,
+            radius: 23,
+            fontWeight: FontWeight.w600,
+          ),
+        ],
+      ),
+    );
+  }
   
   Widget _buildOptionItem({
     required IconData icon,
@@ -627,35 +697,15 @@ suffixIcon:
         decoration: BoxDecoration(
           color: kwhite.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: kwhite.withOpacity(0.1),
-            width: 1,
-          ),
+          border: Border.all(color: kwhite.withOpacity(0.1), width: 1),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: kwhite,
-              size: 24,
-            ),
-            
+            Icon(icon, color: kwhite, size: 24),
             const SizedBox(width: 20),
-            
-            MyText(
-              text: label,
-              size: 16,
-              weight: FontWeight.w500,
-              color: kwhite,
-            ),
-            
+            MyText(text: label, size: 16, weight: FontWeight.w500, color: kwhite),
             Spacer(),
-            
-            Icon(
-              Icons.arrow_forward_ios,
-              color: kwhite.withOpacity(0.5),
-              size: 16,
-            ),
+            Icon(Icons.arrow_forward_ios, color: kwhite.withOpacity(0.5), size: 16),
           ],
         ),
       ),
