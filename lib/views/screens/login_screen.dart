@@ -1,5 +1,6 @@
 // lib/views/screens/login_screen.dart (Updated)
 import 'package:expensary/constants/colors.dart';
+import 'package:expensary/controllers/login_controller.dart';
 import 'package:expensary/views/screens/forgot_password_screen.dart';
 import 'package:expensary/views/screens/main_navigation_screen.dart';
 import 'package:expensary/views/screens/signup_screen.dart';
@@ -8,48 +9,6 @@ import 'package:expensary/views/widgets/my_text.dart';
 import 'package:expensary/views/widgets/my_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-class LoginController extends GetxController {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final RxBool rememberMe = false.obs;
-  final RxBool isPasswordVisible = false.obs;
-  
-  @override
-  void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.onClose();
-  }
-  
-  void toggleRememberMe() {
-    rememberMe.value = !rememberMe.value;
-  }
-  
-  void togglePasswordVisibility() {
-    isPasswordVisible.value = !isPasswordVisible.value;
-  }
-  
-  void login() {
-    if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-      // For now, just navigate to the main screen without any actual authentication
-      Get.offAll(() => MainNavigationScreen());
-    } else {
-      Get.snackbar(
-        'Error',
-        'Please enter both email and password',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-    }
-  }
-  
-  void forgotPassword() {
-    // Navigate to forgot password screen
-    Get.to(() => ForgotPasswordScreen());
-  }
-}
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);

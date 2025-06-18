@@ -1,140 +1,30 @@
-// Create a new file: views/screens/auth/otp_verification_screen.dart
-import 'dart:async';
+// lib/views/screens/otp_verification_screen.dart
 import 'package:expensary/constants/colors.dart';
-import 'package:expensary/views/screens/main_navigation_screen.dart';
+import 'package:expensary/controllers/o_t_p_verification_controller.dart';
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class OTPVerificationController extends GetxController {
-  // OTP input controllers for each digit
-  final List<TextEditingController> otpControllers = List.generate(
-    4,
-    (index) => TextEditingController(),
-  );
-  
-  // List of FocusNodes for each OTP input field
-  final List<FocusNode> otpFocusNodes = List.generate(
-    4,
-    (index) => FocusNode(),
-  );
-  
-  // Timer for countdown
-  Timer? _timer;
-  final RxInt countdown = 60.obs;
-  final RxBool canResend = false.obs;
-  
-  @override
-  void onInit() {
-    super.onInit();
-    startTimer();
-  }
-  
-  @override
-  void onClose() {
-    // Dispose controllers and focus nodes
-    for (var controller in otpControllers) {
-      controller.dispose();
-    }
-    for (var node in otpFocusNodes) {
-      node.dispose();
-    }
-    
-    // Cancel timer if active
-    if (_timer != null && _timer!.isActive) {
-      _timer!.cancel();
-    }
-    
-    super.onClose();
-  }
-  
-  void startTimer() {
-    countdown.value = 60;
-    canResend.value = false;
-    
-    // Cancel any existing timer
-    if (_timer != null && _timer!.isActive) {
-      _timer!.cancel();
-    }
-    
-    // Start countdown timer
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (countdown.value > 0) {
-        countdown.value--;
-      } else {
-        canResend.value = true;
-        timer.cancel();
-      }
-    });
-  }
-  
-  void resendOTP() {
-    if (canResend.value) {
-      // Clear existing OTP
-      for (var controller in otpControllers) {
-        controller.clear();
-      }
-      
-      // Set focus to first field
-      otpFocusNodes[0].requestFocus();
-      
-      // Restart timer
-      startTimer();
-      
-      // Show message
-      Get.snackbar(
-        'OTP Resent',
-        'A new verification code has been sent',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-    }
-  }
-  
-  // Handle input in OTP fields
-  void otpDigitInput(String value, int index) {
-    if (value.length == 1) {
-      // Move to next field
-      if (index < 3) {
-        otpFocusNodes[index + 1].requestFocus();
-      } else {
-        // Last digit entered, check if all filled
-        verifyOTP();
-      }
-    }
-  }
-  
-  // Verify the entered OTP
-  void verifyOTP() {
-    // Combine all digits
-    String otp = '';
-    for (var controller in otpControllers) {
-      otp += controller.text;
-    }
-    
-    // Check if all digits are entered
-    if (otp.length != 4) {
-      return;
-    }
-    
-    // For demonstration, any 4-digit code is accepted
-    Get.offAll(() => MainNavigationScreen());
-  }
-}
-
 class OTPVerificationScreen extends StatelessWidget {
   final String email;
+  final String userId;
   
   const OTPVerificationScreen({
     Key? key,
     required this.email,
+    required this.userId,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final OTPVerificationController controller = Get.put(OTPVerificationController());
+    // Initialize the controller with the required parameters
+    final controller = Get.put(
+      OTPController(
+        userId: userId,
+        email: email,
+      ),
+    );
     
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -202,7 +92,33 @@ class OTPVerificationScreen extends StatelessWidget {
                     color: kwhite,
                   ),
                   
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 10),
+                  
+                  // OTP display for testing only - remove in production
+                  Container(
+                    margin: EdgeInsets.only(top: 10),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.amber),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: MyText(
+                            text: 'For testing: Check the console log for the OTP code',
+                            size: 14,
+                            color: Colors.amber,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 30),
                   
                   // OTP Input Fields
                   Row(
@@ -220,9 +136,9 @@ class OTPVerificationScreen extends StatelessWidget {
                   const SizedBox(height: 40),
                   
                   // Verify Button
-                  MyButton(
-                    onTap: controller.verifyOTP,
-                    buttonText: 'Verify',
+                  Obx(() => MyButton(
+                    onTap: controller.isLoading.value ? null : () => controller.verifyOTP(),
+                    buttonText: controller.isLoading.value ? 'Verifying...' : 'Verify',
                     width: double.infinity,
                     height: 56,
                     fillColor: Color(0xFFAF4BCE),
@@ -230,7 +146,8 @@ class OTPVerificationScreen extends StatelessWidget {
                     fontSize: 18,
                     radius: 28,
                     fontWeight: FontWeight.bold,
-                  ),
+                    isLoading: controller.isLoading.value,
+                  )),
                   
                   const SizedBox(height: 30),
                   
@@ -245,16 +162,18 @@ class OTPVerificationScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Obx(() => GestureDetector(
-                          onTap: controller.canResend.value
+                          onTap: (controller.canResend.value && !controller.isLoading.value)
                               ? controller.resendOTP
                               : null,
                           child: MyText(
-                            text: controller.canResend.value
-                                ? 'Resend Code'
-                                : 'Resend Code in ${controller.countdown.value}s',
+                            text: controller.isLoading.value
+                                ? 'Please wait...'
+                                : (controller.canResend.value
+                                    ? 'Resend Code'
+                                    : 'Resend Code in ${controller.countdown.value}s'),
                             size: 16,
                             weight: FontWeight.bold,
-                            color: controller.canResend.value
+                            color: (controller.canResend.value && !controller.isLoading.value)
                                 ? Color(0xFFAF4BCE)
                                 : kwhite.withOpacity(0.5),
                           ),

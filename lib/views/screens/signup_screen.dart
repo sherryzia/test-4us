@@ -1,107 +1,12 @@
-// Updated Signup Screen with MyTextField
+// lib/views/screens/signup_screen.dart
 import 'package:expensary/constants/colors.dart';
-import 'package:expensary/views/screens/otp_verification_screen.dart';
+import 'package:expensary/controllers/signup_controller.dart';
 import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/views/widgets/my_Button.dart';
 import 'package:expensary/views/widgets/my_text.dart';
-import 'package:expensary/views/widgets/my_textfield.dart'; // Import MyTextField
+import 'package:expensary/views/widgets/my_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-class SignupController extends GetxController {
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
-  final RxBool agreeToTerms = false.obs;
-  final RxBool isPasswordVisible = false.obs;
-  final RxBool isConfirmPasswordVisible = false.obs;
-  
-  @override
-  void onClose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.onClose();
-  }
-  
-  void toggleAgreeToTerms() {
-    agreeToTerms.value = !agreeToTerms.value;
-  }
-  
-  void togglePasswordVisibility() {
-    isPasswordVisible.value = !isPasswordVisible.value;
-  }
-  
-  void toggleConfirmPasswordVisibility() {
-    isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
-  }
-  
-  void signup() {
-    if (!validateForm()) {
-      return;
-    }
-    
-    // Navigate to OTP verification screen
-    Get.to(() => OTPVerificationScreen(
-      email: emailController.text,
-    ));
-  }
-  
-  bool validateForm() {
-    // Check if any field is empty
-    if (nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty ||
-        confirmPasswordController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please fill all fields',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-      return false;
-    }
-    
-    // Check if passwords match
-    if (passwordController.text != confirmPasswordController.text) {
-      Get.snackbar(
-        'Error',
-        'Passwords do not match',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-      return false;
-    }
-    
-    // Check if user agreed to terms
-    if (!agreeToTerms.value) {
-      Get.snackbar(
-        'Error',
-        'Please agree to Terms & Conditions',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-      return false;
-    }
-    
-    return true;
-  }
-  
-  void viewTerms() {
-    Get.snackbar(
-      'Terms & Conditions',
-      'Terms & Conditions coming soon',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.blue.withOpacity(0.8),
-      colorText: Colors.white,
-    );
-  }
-}
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -294,17 +199,18 @@ class SignupScreen extends StatelessWidget {
                   const SizedBox(height: 30), // Reduced spacing
                   
                   // Sign Up Button
-                  MyButton(
-                    onTap: controller.signup,
-                    buttonText: 'Create Account',
+                  Obx(() => MyButton(
+                    onTap: controller.isLoading.value ? null : controller.signup,
+                    buttonText: controller.isLoading.value ? 'Creating Account...' : 'Create Account',
                     width: double.infinity,
-                    height: 32,
+                    height: 50,
                     fillColor: Color(0xFFAF4BCE),
                     fontColor: kwhite,
                     fontSize: 18,
                     radius: 10,
                     fontWeight: FontWeight.bold,
-                  ),
+                    isLoading: controller.isLoading.value,
+                  )),
                   
                   const SizedBox(height: 24), // Reduced spacing
                   

@@ -1,7 +1,8 @@
-// Updated controllers/add_expense_controller.dart
+// lib/controllers/add_expense_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expensary/controllers/home_controller.dart';
+import 'package:expensary/controllers/global_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
 import 'package:intl/intl.dart';
 
@@ -10,16 +11,22 @@ class AddExpenseController extends GetxController {
   final timeController = TextEditingController();
   final dateController = TextEditingController();
   final amountController = TextEditingController();
-  final titleController = TextEditingController(); // Added for expense title/merchant
+  final titleController = TextEditingController();
+  final notesController = TextEditingController();
   
   // Observable variables
   final RxString selectedCategory = 'Electronics'.obs;
   final RxString selectedCurrency = 'PKR (₨)'.obs;
   final RxString selectedPaymentMethod = 'Physical Cash'.obs;
   final Rx<DateTime> selectedDateTime = DateTime.now().obs;
+  final RxBool isLoading = false.obs;
+  
+  // For Supabase data
+  String? selectedCategoryId;
+  String? selectedPaymentMethodId;
   
   // Dropdown options
-  final List<String> categories = [
+  final RxList<String> categories = <String>[
     'Electronics',
     'Food & Dining',
     'Transportation',
@@ -30,17 +37,17 @@ class AddExpenseController extends GetxController {
     'Education',
     'Travel',
     'Other'
-  ];
+  ].obs;
   
-  final List<String> currencies = [
+  final RxList<String> currencies = <String>[
     'PKR (₨)',
     'USD (\$)',
     'EUR (€)',
     'GBP (£)',
     'JPY (¥)'
-  ];
+  ].obs;
   
-  final List<String> paymentMethods = [
+  final RxList<String> paymentMethods = <String>[
     'Physical Cash',
     'Debit Card',
     'Credit Card',
@@ -49,7 +56,7 @@ class AddExpenseController extends GetxController {
     'Digital Wallet',
     'Mastercard',
     'Visa'
-  ];
+  ].obs;
   
   // Map of merchants with their brand logos (iconData placeholders)
   final Map<String, Map<String, dynamic>> knownMerchants = {
@@ -113,6 +120,7 @@ class AddExpenseController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    loadCategoriesAndPaymentMethods();
     initializeDateTime();
   }
   
@@ -122,7 +130,40 @@ class AddExpenseController extends GetxController {
     dateController.dispose();
     amountController.dispose();
     titleController.dispose();
+    notesController.dispose();
     super.onClose();
+  }
+  
+  // Load categories and payment methods from global controller
+  void loadCategoriesAndPaymentMethods() {
+    try {
+      final globalController = Get.find<GlobalController>();
+      
+      // Only update if authenticated
+      if (globalController.isAuthenticated.value) {
+        // Get category names
+        final categoryNames = globalController.categoryNames;
+        if (categoryNames.isNotEmpty) {
+          categories.value = categoryNames;
+          selectedCategory.value = categoryNames.first;
+          
+          // Get category ID for the selected category
+          selectedCategoryId = globalController.getCategoryId(selectedCategory.value);
+        }
+        
+        // Get payment method names
+        final paymentMethodNames = globalController.paymentMethodNames;
+        if (paymentMethodNames.isNotEmpty) {
+          paymentMethods.value = paymentMethodNames;
+          selectedPaymentMethod.value = paymentMethodNames.first;
+          
+          // Get payment method ID for the selected payment method
+          selectedPaymentMethodId = globalController.getPaymentMethodId(selectedPaymentMethod.value);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading categories and payment methods: $e');
+    }
   }
   
   void initializeDateTime() {
@@ -188,6 +229,10 @@ class AddExpenseController extends GetxController {
   
   void changeCategory(String category) {
     selectedCategory.value = category;
+    
+    // Update the category ID
+    final globalController = Get.find<GlobalController>();
+    selectedCategoryId = globalController.getCategoryId(category);
   }
   
   void changeCurrency(String currency) {
@@ -196,6 +241,10 @@ class AddExpenseController extends GetxController {
   
   void changePaymentMethod(String method) {
     selectedPaymentMethod.value = method;
+    
+    // Update the payment method ID
+    final globalController = Get.find<GlobalController>();
+    selectedPaymentMethodId = globalController.getPaymentMethodId(method);
   }
   
   bool isFormValid() {
@@ -205,7 +254,7 @@ class AddExpenseController extends GetxController {
            titleController.text.isNotEmpty;
   }
   
-  void saveExpense() {
+  Future<void> saveExpense() async {
     if (!isFormValid()) {
       Get.snackbar(
         'Invalid Input',
@@ -217,95 +266,105 @@ class AddExpenseController extends GetxController {
       return;
     }
     
-    // Get formatted date for display
-    final DateFormat formatter = DateFormat('MMM dd, yyyy');
-    final String formattedDate = formatter.format(selectedDateTime.value);
+    isLoading.value = true;
     
-    // Format title/merchant name
-    final String merchantName = titleController.text.trim();
-    
-    // Determine icon and background
-    String iconData = 'shopping_bag'; // Default icon
-    String iconBg = 'black';         // Default background
-    
-    // Check if this is a known merchant
-    if (knownMerchants.containsKey(merchantName)) {
-      iconData = knownMerchants[merchantName]!['icon']!;
-      iconBg = knownMerchants[merchantName]!['bgColor']!;
+    try {
+      // Get formatted date for display
+      final DateFormat formatter = DateFormat('MMM dd, yyyy');
+      final String formattedDate = formatter.format(selectedDateTime.value);
       
-      // Set category if from known merchant
-      if (selectedCategory.value == 'Electronics') {
-        selectedCategory.value = knownMerchants[merchantName]!['category']!;
+      // Format title/merchant name
+      final String merchantName = titleController.text.trim();
+      
+      // Determine icon and background
+      String iconData = 'shopping_bag'; // Default icon
+      String iconBg = 'black';         // Default background
+      
+      // Check if this is a known merchant
+      if (knownMerchants.containsKey(merchantName)) {
+        iconData = knownMerchants[merchantName]!['icon']!;
+        iconBg = knownMerchants[merchantName]!['bgColor']!;
+        
+        // Set category if from known merchant
+        if (selectedCategory.value == 'Electronics') {
+          selectedCategory.value = knownMerchants[merchantName]!['category']!;
+          
+          // Update the category ID based on the new category
+          final globalController = Get.find<GlobalController>();
+          selectedCategoryId = globalController.getCategoryId(selectedCategory.value);
+        }
+      } else {
+        // Set icon based on category
+        switch (selectedCategory.value) {
+          case 'Food & Dining':
+            iconData = 'restaurant';
+            break;
+          case 'Transportation':
+            iconData = 'local_taxi';
+            break;
+          case 'Electronics':
+            iconData = 'devices';
+            break;
+          case 'Shopping':
+            iconData = 'shopping_bag';
+            break;
+          case 'Entertainment':
+            iconData = 'movie';
+            break;
+          case 'Health & Medical':
+            iconData = 'medical_services';
+            break;
+          case 'Bills & Utilities':
+            iconData = 'receipt';
+            break;
+          case 'Education':
+            iconData = 'school';
+            break;
+          case 'Travel':
+            iconData = 'flight';
+            break;
+          default:
+            iconData = 'shopping_bag';
+        }
       }
-    } else {
-      // Set icon based on category
-      switch (selectedCategory.value) {
-        case 'Food & Dining':
-          iconData = 'restaurant';
-          break;
-        case 'Transportation':
-          iconData = 'local_taxi';
-          break;
-        case 'Electronics':
-          iconData = 'devices';
-          break;
-        case 'Shopping':
-          iconData = 'shopping_bag';
-          break;
-        case 'Entertainment':
-          iconData = 'movie';
-          break;
-        case 'Health & Medical':
-          iconData = 'medical_services';
-          break;
-        case 'Bills & Utilities':
-          iconData = 'receipt';
-          break;
-        case 'Education':
-          iconData = 'school';
-          break;
-        case 'Travel':
-          iconData = 'flight';
-          break;
-        default:
-          iconData = 'shopping_bag';
-      }
+      
+      // Parse amount (negative for expenses)
+      double amount = -double.parse(amountController.text);
+      
+      // Create expense object
+      final ExpenseItem expenseItem = ExpenseItem(
+        title: merchantName,
+        date: formattedDate,
+        amount: amount, // Negative for expenses
+        iconData: iconData,
+        iconBg: iconBg,
+      );
+      
+      // Add to HomeController
+      final HomeController homeController = Get.find<HomeController>();
+      await homeController.addNewExpense(expenseItem);
+      
+      // Reset form
+      resetForm();
+      
+      // Navigate back to home
+      Get.back();
+      
+    } catch (e) {
+      debugPrint('Error saving expense: $e');
+      Get.find<GlobalController>().handleError(e, customMessage: 'Failed to save expense');
+    } finally {
+      isLoading.value = false;
     }
-    
-    // Parse amount (negative for expenses)
-    double amount = -double.parse(amountController.text);
-    
-    // Create expense object
-    final ExpenseItem expenseItem = ExpenseItem(
-      title: merchantName,
-      date: formattedDate,
-      amount: amount, // Negative for expenses
-      iconData: iconData,
-      iconBg: iconBg,
-    );
-    
-    // Add to HomeController
-    final HomeController homeController = Get.find<HomeController>();
-    homeController.addNewExpense(expenseItem);
-    
-    Get.snackbar(
-      'Success',
-      'Expense added successfully!',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.withOpacity(0.8),
-      colorText: Colors.white,
-    );
-    
-    // Navigate back to home
-    Get.back();
   }
   
   void resetForm() {
     titleController.clear();
     amountController.clear();
-    selectedCategory.value = 'Electronics';
-    selectedCurrency.value = 'PKR (₨)';
-    selectedPaymentMethod.value = 'Physical Cash';
+    notesController.clear();
+    selectedCategory.value = categories.isNotEmpty ? categories.first : 'Electronics';
+    selectedCurrency.value = currencies.isNotEmpty ? currencies.first : 'PKR (₨)';
+    selectedPaymentMethod.value = paymentMethods.isNotEmpty ? paymentMethods.first : 'Physical Cash';
     initializeDateTime();
   }
 }
