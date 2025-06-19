@@ -425,105 +425,131 @@ class SupabaseService {
   }
   
   // ====== Expenses Methods ======
-  
-  // Get expenses with optional filters
   static Future<List<Map<String, dynamic>>> getExpenses({
-    required String userId,
-    int? limit,
-    String? categoryId,
-    DateTime? startDate,
-    DateTime? endDate,
-    bool includeRelations = true,
-  }) async {
-    try {
-      String query = '*';
-      
-      if (includeRelations) {
-        query = '''
-          *,
-          categories(name, icon_name, color),
-          payment_methods(name, type, icon_name)
-        ''';
-      }
-      
-      var dbQuery = _client
-          .from('expenses')
-          .select(query)
-          .eq('user_id', userId);
-      
-      if (categoryId != null) {
-        dbQuery = dbQuery.eq('category_id', categoryId);
-      }
-      
-      if (startDate != null) {
-        dbQuery = dbQuery.gte('expense_date', startDate.toIso8601String().split('T')[0]);
-      }
-      
-      if (endDate != null) {
-        dbQuery = dbQuery.lte('expense_date', endDate.toIso8601String().split('T')[0]);
-      }
-      
-      // First apply ordering
-      var orderedQuery = dbQuery.order('expense_date', ascending: false);
-      
-      // Then apply limit if needed
-      if (limit != null) {
-        orderedQuery = orderedQuery.limit(limit);
-      }
-      
-      // Execute query
-      final result = await orderedQuery;
-      return result;
-    } catch (e) {
-      debugPrint('Get expenses error: $e');
-      return [];
+  required String userId,
+  int? limit,
+  String? categoryId,
+  DateTime? startDate,
+  DateTime? endDate,
+  bool includeRelations = true,
+}) async {
+  try {
+    String query = '*';
+    
+    if (includeRelations) {
+      query = '''
+        *,
+        categories(name, icon_name, color),
+        payment_methods(name, type, icon_name)
+      ''';
     }
+    
+    var dbQuery = _client
+        .from('expenses')
+        .select(query)
+        .eq('user_id', userId);
+    
+    if (categoryId != null) {
+      dbQuery = dbQuery.eq('category_id', categoryId);
+    }
+    
+    if (startDate != null) {
+      dbQuery = dbQuery.gte('expense_date', startDate.toIso8601String().split('T')[0]);
+    }
+    
+    if (endDate != null) {
+      dbQuery = dbQuery.lte('expense_date', endDate.toIso8601String().split('T')[0]);
+    }
+    
+    // First apply ordering
+    var orderedQuery = dbQuery.order('expense_date', ascending: false);
+    
+    // Then apply limit if needed
+    if (limit != null) {
+      orderedQuery = orderedQuery.limit(limit);
+    }
+    
+    // Execute query
+    final result = await orderedQuery;
+    return result;
+  } catch (e) {
+    debugPrint('Get expenses error: $e');
+    return [];
   }
+}
   
   // Create a new expense
-  static Future<Map<String, dynamic>> createExpense({
-    required String title,
-    required double amount,
-    required DateTime expenseDate,
-    required String userId,
-    String? categoryId,
-    String? paymentMethodId,
-    String? notes,
-    String? iconData,
-    String? iconBg,
-    TimeOfDay? transactionTime,
-  }) async {
-    try {
-      final data = {
-        'title': title,
-        'amount': amount,
-        'expense_date': expenseDate.toIso8601String().split('T')[0],
-        'user_id': userId,
-        'category_id': categoryId,
-        'payment_method_id': paymentMethodId,
-        'notes': notes,
-        'icon_data': iconData,
-        'icon_bg': iconBg,
-        'transaction_time': transactionTime != null 
-            ? '${transactionTime.hour.toString().padLeft(2, '0')}:${transactionTime.minute.toString().padLeft(2, '0')}:00'
-            : null,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-      
-      final response = await _client
-          .from('expenses')
-          .insert(data)
-          .select()
-          .single();
-      
-      return response;
-    } catch (e) {
-      debugPrint('Create expense error: $e');
-      rethrow;
+  // Partial file showing only the createExpense method update
+
+// In lib/services/supabase_service.dart, replace or update the createExpense method:
+static Future<Map<String, dynamic>> createExpense({
+  required String title,
+  required double amount,
+  required DateTime expenseDate,
+  required String userId,
+  String? categoryId,
+  String? paymentMethodId,
+  String? notes,
+  String? iconData,
+  String? iconBg,
+  String? category, // We'll use this to find the category_id, not insert directly
+  TimeOfDay? transactionTime,
+}) async {
+  try {
+    // Determine transaction type (income vs expense)
+    String transactionType = amount >= 0 ? 'income' : 'expense';
+    
+    // If categoryId is not provided but category name is, try to find the categoryId
+    if (categoryId == null && category != null) {
+      try {
+        // Look up category by name
+        final categories = await _client
+            .from('categories')
+            .select('id')
+            .or('is_default.eq.true,user_id.eq.$userId')
+            .ilike('name', '%${category.replaceAll("Income: ", "")}%')
+            .limit(1);
+            
+        if (categories.isNotEmpty) {
+          categoryId = categories[0]['id'];
+        }
+      } catch (e) {
+        debugPrint('Error finding category by name: $e');
+        // Continue without categoryId if lookup fails
+      }
     }
+    
+    // Create data object according to your schema
+    final data = {
+      'title': title,
+      'amount': amount,
+      'expense_date': expenseDate.toIso8601String().split('T')[0],
+      'user_id': userId,
+      'category_id': categoryId,
+      'payment_method_id': paymentMethodId,
+      'notes': notes,
+      'icon_data': iconData,
+      'icon_bg': iconBg,
+      'transaction_type': transactionType,
+      'transaction_time': transactionTime != null 
+          ? '${transactionTime.hour.toString().padLeft(2, '0')}:${transactionTime.minute.toString().padLeft(2, '0')}:00'
+          : null,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    
+    final response = await _client
+        .from('expenses')
+        .insert(data)
+        .select()
+        .single();
+    
+    return response;
+  } catch (e) {
+    debugPrint('Create expense error: $e');
+    rethrow;
   }
-  
+}
   // Update an expense
   static Future<void> updateExpense({
     required String expenseId,

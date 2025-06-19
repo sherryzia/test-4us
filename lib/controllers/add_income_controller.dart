@@ -303,13 +303,17 @@ class AddIncomeController extends GetxController {
       // Parse amount (positive for income)
       double amount = double.parse(amountController.text);
       
-      // Create income object as ExpenseItem (but with positive amount)
+      // Create category string for income
+      String category = 'Income: ${selectedIncomeType.value}';
+      
+      // Create income object as ExpenseItem (but with positive amount and income category)
       final ExpenseItem incomeItem = ExpenseItem(
         title: sourceName,
         date: formattedDate,
         amount: amount, // Positive for income
         iconData: iconData,
         iconBg: iconBg,
+        category: category, // Add income category
       );
       
       // Save to database using SupabaseService
@@ -322,7 +326,7 @@ class AddIncomeController extends GetxController {
           userId: globalController.userId,
           iconData: iconData,
           iconBg: iconBg,
-          // Add transaction_type field to indicate this is income
+          category: category, // Save category
           notes: 'Income: ${selectedIncomeType.value}',
         );
         

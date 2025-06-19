@@ -279,6 +279,7 @@ class AddExpenseController extends GetxController {
       // Determine icon and background
       String iconData = 'shopping_bag'; // Default icon
       String iconBg = 'black';         // Default background
+      String category = selectedCategory.value; // Store selected category
       
       // Check if this is a known merchant
       if (knownMerchants.containsKey(merchantName)) {
@@ -287,15 +288,15 @@ class AddExpenseController extends GetxController {
         
         // Set category if from known merchant
         if (selectedCategory.value == 'Electronics') {
-          selectedCategory.value = knownMerchants[merchantName]!['category']!;
+          category = knownMerchants[merchantName]!['category']!;
           
           // Update the category ID based on the new category
           final globalController = Get.find<GlobalController>();
-          selectedCategoryId = globalController.getCategoryId(selectedCategory.value);
+          selectedCategoryId = globalController.getCategoryId(category);
         }
       } else {
         // Set icon based on category
-        switch (selectedCategory.value) {
+        switch (category) {
           case 'Food & Dining':
             iconData = 'restaurant';
             break;
@@ -331,13 +332,14 @@ class AddExpenseController extends GetxController {
       // Parse amount (negative for expenses)
       double amount = -double.parse(amountController.text);
       
-      // Create expense object
+      // Create expense object with category
       final ExpenseItem expenseItem = ExpenseItem(
         title: merchantName,
         date: formattedDate,
         amount: amount, // Negative for expenses
         iconData: iconData,
         iconBg: iconBg,
+        category: category, // Include the category
       );
       
       // Add to HomeController

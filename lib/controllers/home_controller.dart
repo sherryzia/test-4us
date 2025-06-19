@@ -10,14 +10,26 @@ class HomeController extends GetxController {
   final RxDouble availableBalance = 0.0.obs;
   final RxDouble monthlyBudget = 0.0.obs;
   final RxDouble spentAmount = 0.0.obs;
+  final RxDouble totalIncome = 0.0.obs; // Added to track income
 
-  double get spentPercentage => monthlyBudget.value > 0
-      ? (spentAmount.value / monthlyBudget.value).clamp(0.0, 1.0)
-      : 0.0;
+  // Calculate percentages for the circle chart
+  double get spentPercentage {
+    // Calculate as a portion of the total 
+    double total = monthlyBudget.value + totalIncome.value;
+    return total > 0 ? (spentAmount.value / total).clamp(0.0, 1.0) : 0.0;
+  }
 
-  double get availablePercentage => monthlyBudget.value > 0
-      ? (availableBalance.value / monthlyBudget.value).clamp(0.0, 1.0)
-      : 0.0;
+  double get availablePercentage {
+    // Calculate as a portion of the total
+    double total = monthlyBudget.value + totalIncome.value;
+    return total > 0 ? (availableBalance.value / total).clamp(0.0, 1.0) : 0.0;
+  }
+  
+  double get incomePercentage {
+    // Calculate as a portion of the total
+    double total = monthlyBudget.value + totalIncome.value;
+    return total > 0 ? (totalIncome.value / total).clamp(0.0, 1.0) : 0.0;
+  }
 
   final RxBool isLoading = false.obs;
   final RxList<TipItem> tips = <TipItem>[].obs;
@@ -53,11 +65,20 @@ class HomeController extends GetxController {
         );
 
         double spent = 0.0;
+        double income = 0.0; // Track income
         final List<ExpenseItem> expensesList = [];
 
         for (final expense in expensesData) {
           final amount = (expense['amount'] as num).toDouble();
-          if (amount < 0) spent += amount.abs();
+          // Get the category from the database or determine from title
+          String category = expense['category'] ?? 
+                        getCategoryFromMerchant(expense['title'] ?? 'Unknown');
+          
+          if (amount < 0) {
+            spent += amount.abs(); // Add to spent amount if negative
+          } else {
+            income += amount; // Add to income if positive
+          }
 
           expensesList.add(ExpenseItem(
             title: expense['title'] ?? 'Unknown',
@@ -65,18 +86,39 @@ class HomeController extends GetxController {
             amount: amount,
             iconData: expense['icon_data'] ?? 'shopping_bag',
             iconBg: expense['icon_bg'] ?? 'black',
+            category: category, // Include the category
           ));
         }
 
         expenses.value = expensesList;
         spentAmount.value = spent;
-        availableBalance.value = monthlyBudget.value - spentAmount.value;
+        totalIncome.value = income; // Set the income value
+        // Update balance calculation to include income
+        availableBalance.value = monthlyBudget.value + totalIncome.value - spentAmount.value;
       }
     } catch (e) {
       Get.find<GlobalController>().handleError(e, customMessage: 'Failed to load data');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Helper function to determine category from merchant name
+  String getCategoryFromMerchant(String merchantName) {
+    if (['Amazon', 'Nike Air Max 2090'].contains(merchantName)) {
+      return 'Shopping';
+    } else if (['McDonalds', 'Starbucks'].contains(merchantName)) {
+      return 'Food & Dining';
+    } else if (['iPad Pro', 'iPhone', 'Apple'].contains(merchantName)) {
+      return 'Electronics';
+    } else if (['Mastercard', 'Visa'].contains(merchantName)) {
+      return 'Bills & Utilities';
+    } else if (['Uber'].contains(merchantName)) {
+      return 'Transportation';
+    } else if (['Spotify', 'Netflix'].contains(merchantName)) {
+      return 'Entertainment';
+    }
+    return 'Other';
   }
 
   Future<void> loadTips() async {
@@ -119,8 +161,9 @@ class HomeController extends GetxController {
           userId: globalController.userId,
           iconData: expense.iconData,
           iconBg: expense.iconBg,
+          category: expense.category, // Pass the category to the service
         );
-        await loadData();
+        await loadData(); // Reload data to include the new expense
         globalController.showSuccess('Expense added successfully!');
       }
     } catch (e) {
@@ -141,6 +184,7 @@ class HomeController extends GetxController {
     _tipTimer?.cancel();
     startTipRotation();
   }
+  
   String _formatDate(String? dateStr) {
     if (dateStr == null) return 'Unknown date';
     try {

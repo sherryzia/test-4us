@@ -2,7 +2,7 @@
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/home_controller.dart';
 import 'package:expensary/models/expense_item_model.dart';
-import 'package:expensary/views/widgets/custom_app_bar.dart'; // Import the custom app bar
+import 'package:expensary/views/widgets/custom_app_bar.dart'; 
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,20 +17,10 @@ class AnalyticsScreen extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: backgroundColor,
-      // Using the custom app bar with title and profile
       appBar: CustomAppBar(
         title: 'Analytics',
         type: AppBarType.withProfile,
-        // onProfileTap: () {
-        //   // Handle profile tap
-        //   Get.snackbar(
-        //     'Profile',
-        //     'Profile button tapped',
-        //     snackPosition: SnackPosition.BOTTOM,
-        //   );
-        // },
-        // Optional: Add an action button if needed
-             ),
+      ),
       body: SingleChildScrollView(
         physics: BouncingScrollPhysics(),
         child: Padding(
@@ -40,18 +30,18 @@ class AnalyticsScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
               
-              // Monthly Summary Card
-Obx(() => _buildSummaryCard(controller)),
+              // Monthly Summary Card - Updated to use actual income value
+              Obx(() => _buildSummaryCard(controller)),
               
               const SizedBox(height: 30),
               
-              // Implemented Category Pie Chart
-Obx(() => _buildCategoryPieChart(controller)),
+              // Category Pie Chart - Updated to use stored categories
+              Obx(() => _buildCategoryPieChart(controller)),
               
               const SizedBox(height: 30),
               
-              // Expense Breakdown by Category
-Obx(() => _buildExpenseBreakdown(controller)),
+              // Expense Breakdown by Category - Updated to use stored categories
+              Obx(() => _buildExpenseBreakdown(controller)),
               
               const SizedBox(height: 100), // Space for bottom navigation
             ],
@@ -99,7 +89,8 @@ Obx(() => _buildExpenseBreakdown(controller)),
             children: [
               _buildSummaryItem(
                 title: 'Income',
-                amount: '₨0',
+                // Use actual income value instead of hardcoded 0
+                amount: '₨${_formatCurrency(controller.totalIncome.value)}',
                 color: kgreen,
                 icon: Icons.arrow_upward,
               ),
@@ -166,7 +157,8 @@ Obx(() => _buildExpenseBreakdown(controller)),
 
   for (var expense in controller.expenses) {
     if (expense.amount < 0) {
-      String category = _getCategoryForExpense(expense);
+      // Use the stored category from expense item
+      String category = expense.category;
       double absAmount = expense.amount.abs();
       totalSpent += absAmount;
 
@@ -185,7 +177,7 @@ Obx(() => _buildExpenseBreakdown(controller)),
       ),
       child: Center(
         child: MyText(
-          text: 'Nothing to show',
+          text: 'No expenses to show',
           size: 16,
           color: kwhite.withOpacity(0.6),
         ),
@@ -199,16 +191,28 @@ Obx(() => _buildExpenseBreakdown(controller)),
     'Electronics': Colors.blue,
     'Shopping': Colors.purple,
     'Bills & Utilities': Colors.red,
+    'Entertainment': Colors.amber,
+    'Transportation': Colors.teal,
     'Other': Colors.green,
   };
 
   categoryTotals.forEach((category, amount) {
     double percentage = amount / totalSpent;
+    
+    // Find color based on category name
+    Color color = Colors.grey;
+    for (var key in categoryColors.keys) {
+      if (category.contains(key)) {
+        color = categoryColors[key]!;
+        break;
+      }
+    }
+    
     segments.add(PieChartSegment(
       category: category,
       amount: amount,
       percentage: percentage,
-      color: categoryColors[category] ?? Colors.green,
+      color: color,
     ));
   });
 
@@ -282,7 +286,8 @@ Obx(() => _buildExpenseBreakdown(controller)),
 
   for (var expense in controller.expenses) {
     if (expense.amount < 0) {
-      String category = _getCategoryForExpense(expense);
+      // Use the stored category from expense item
+      String category = expense.category;
       double absAmount = expense.amount.abs();
       totalSpent += absAmount;
 
@@ -336,26 +341,27 @@ Obx(() => _buildExpenseBreakdown(controller)),
     IconData categoryIcon;
     
     // Assign colors and icons based on category
-    switch (category) {
-      case 'Food & Dining':
-        categoryColor = Colors.orange;
-        categoryIcon = Icons.restaurant;
-        break;
-      case 'Electronics':
-        categoryColor = Colors.blue;
-        categoryIcon = Icons.devices;
-        break;
-      case 'Shopping':
-        categoryColor = Colors.purple;
-        categoryIcon = Icons.shopping_bag;
-        break;
-      case 'Bills & Utilities':
-        categoryColor = Colors.red;
-        categoryIcon = Icons.receipt;
-        break;
-      default:
-        categoryColor = Colors.green;
-        categoryIcon = Icons.category;
+    if (category.contains('Food & Dining')) {
+      categoryColor = Colors.orange;
+      categoryIcon = Icons.restaurant;
+    } else if (category.contains('Electronics')) {
+      categoryColor = Colors.blue;
+      categoryIcon = Icons.devices;
+    } else if (category.contains('Shopping')) {
+      categoryColor = Colors.purple;
+      categoryIcon = Icons.shopping_bag;
+    } else if (category.contains('Bills & Utilities')) {
+      categoryColor = Colors.red;
+      categoryIcon = Icons.receipt;
+    } else if (category.contains('Transportation')) {
+      categoryColor = Colors.teal;
+      categoryIcon = Icons.local_taxi;
+    } else if (category.contains('Entertainment')) {
+      categoryColor = Colors.amber;
+      categoryIcon = Icons.movie;
+    } else {
+      categoryColor = Colors.green;
+      categoryIcon = Icons.category;
     }
     
     // Cap percentage at 1.0 to prevent overflow
@@ -437,26 +443,6 @@ Obx(() => _buildExpenseBreakdown(controller)),
         ],
       ),
     );
-  }
-  
-  String _getCategoryForExpense(ExpenseItem expense) {
-    // Map expense to category based on merchant
-    switch (expense.title) {
-      case 'Amazon':
-      case 'Nike Air Max 2090':
-        return 'Shopping';
-      case 'McDonalds':
-      case 'Starbucks':
-        return 'Food & Dining';
-      case 'iPad Pro':
-      case 'iPhone':
-        return 'Electronics';
-      case 'Mastercard':
-      case 'Visa':
-        return 'Bills & Utilities';
-      default:
-        return 'Other';
-    }
   }
   
   String _formatCurrency(double amount) {

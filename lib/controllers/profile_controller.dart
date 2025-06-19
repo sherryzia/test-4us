@@ -55,8 +55,7 @@ class ProfileController extends GetxController {
     confirmPasswordController.dispose();
     super.onClose();
   }
-
-  Future<void> fetchUserProfile() async {
+Future<void> fetchUserProfile() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
 
@@ -72,7 +71,26 @@ class ProfileController extends GetxController {
 
       if (response != null) {
         name.value = response['full_name'] ?? '';
-        currency.value = response['currency'] ?? currencies.first;
+        
+        // Get the currency code from the database
+        String dbCurrency = response['currency'] ?? 'PKR';
+        
+        // Find the matching display string in currencies list
+        String displayCurrency = currencies.firstWhere(
+          (c) => c.startsWith(dbCurrency),
+          orElse: () => currencies.first
+        );
+        
+        currency.value = displayCurrency;
+        
+        // Update global controller's currency
+        try {
+          final globalController = Get.find<GlobalController>();
+          globalController.currentCurrency.value = dbCurrency;
+        } catch (e) {
+          debugPrint('Error updating global controller: $e');
+        }
+        
         monthlyBudget.value = (response['monthly_budget'] ?? 0).toDouble();
         monthlyIncome.value = (response['monthly_income'] ?? 0).toDouble();
         
@@ -215,19 +233,36 @@ class ProfileController extends GetxController {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  Future<void> changeCurrency(String newCurrency) async {
+  }Future<void> changeCurrency(String newCurrency) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return;
 
     try {
+      // Extract the currency code from the display string (e.g., "PKR (₨)" -> "PKR")
+      String currencyCode = newCurrency.split(' ')[0];
+      
       await supabase
           .from('users')
-          .update({'currency': newCurrency})
+          .update({'currency': currencyCode})
           .eq('id', userId);
 
       currency.value = newCurrency;
+      
+      // Update global controller's currency
+      try {
+        final globalController = Get.find<GlobalController>();
+        globalController.currentCurrency.value = currencyCode;
+        
+        // Refresh relevant screens
+        try {
+          final homeController = Get.find<HomeController>();
+          homeController.update(); // Force UI update
+        } catch (e) {
+          // Home controller might not be initialized yet
+        }
+      } catch (e) {
+        debugPrint('Error updating global controller: $e');
+      }
 
       Get.snackbar('Success', 'Currency changed to $newCurrency',
         snackPosition: SnackPosition.BOTTOM,
@@ -242,7 +277,6 @@ class ProfileController extends GetxController {
       );
     }
   }
-
   Future<void> resetAllExpenses() async {
     // Show confirmation dialog
     final bool? confirmed = await Get.dialog<bool>(

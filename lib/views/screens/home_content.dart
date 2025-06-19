@@ -1,4 +1,4 @@
-// lib/views/screens/home_content.dart - Updated (Remove Quick Action Buttons)
+// lib/views/screens/home_content.dart - Updated to show income and correct balance
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/views/widgets/custom_app_bar.dart';
 import 'package:expensary/controllers/home_controller.dart';
@@ -20,13 +20,6 @@ class HomeContent extends StatelessWidget {
       appBar: CustomAppBar(
         title: 'Home',
         type: AppBarType.withProfile,
-        // onProfileTap: () {
-        //   Get.snackbar(
-        //     'Profile',
-        //     'Profile button tapped',
-        //     snackPosition: SnackPosition.BOTTOM,
-        //   );
-        // },
       ),
       body: Column(
         children: [
@@ -52,6 +45,7 @@ class HomeContent extends StatelessWidget {
                                 painter: BalanceCirclePainter(
                                   spentPercentage: controller.spentPercentage,
                                   availablePercentage: controller.availablePercentage,
+                                  incomePercentage: controller.incomePercentage,
                                 ),
                               ),
                             ),
@@ -71,10 +65,30 @@ class HomeContent extends StatelessWidget {
                                   color: kwhite.withOpacity(0.7),
                                 ),
                                 const SizedBox(height: 8),
-                                MyText(
-                                  text: 'Spent: ₨${_formatCurrency(controller.spentAmount.value)}',
-                                  size: 12,
-                                  color: kred.withOpacity(0.8),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.arrow_upward, color: kgreen, size: 12),
+                                    const SizedBox(width: 4),
+                                    MyText(
+                                      text: 'Income: ₨${_formatCurrency(controller.totalIncome.value)}',
+                                      size: 12,
+                                      color: kgreen.withOpacity(0.8),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.arrow_downward, color: kred, size: 12),
+                                    const SizedBox(width: 4),
+                                    MyText(
+                                      text: 'Spent: ₨${_formatCurrency(controller.spentAmount.value)}',
+                                      size: 12,
+                                      color: kred.withOpacity(0.8),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -269,17 +283,6 @@ class HomeContent extends StatelessWidget {
           weight: FontWeight.bold,
           color: kwhite,
         ),
-        // GestureDetector(
-        //   onTap: () {
-        //     Get.snackbar('Navigation', 'See all transactions');
-        //   },
-        //   child: MyText(
-        //     text: 'See all',
-        //     size: 16,
-        //     weight: FontWeight.w500,
-        //     color: kblue,
-        //   ),
-        // ),
       ],
     );
   }
@@ -399,6 +402,22 @@ class HomeContent extends StatelessWidget {
         return Icons.coffee;
       case 'mastercard':
         return Icons.credit_card;
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'devices':
+        return Icons.devices;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'movie':
+        return Icons.movie;
+      case 'medical_services':
+        return Icons.medical_services;
+      case 'receipt':
+        return Icons.receipt;
+      case 'school':
+        return Icons.school;
+      case 'flight':
+        return Icons.flight;
       default:
         return Icons.shopping_bag;
     }

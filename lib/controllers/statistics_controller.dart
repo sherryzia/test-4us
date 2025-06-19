@@ -305,33 +305,37 @@ class StatisticsController extends GetxController {
     return realChartLabels.isNotEmpty ? realChartLabels : _getFallbackChartLabels();
   }
   
-  // Get Y-axis labels based on financial summary
   List<String> get yAxisLabels {
+    final globalController = Get.find<GlobalController>();
+    
     if (financialSummary.isNotEmpty) {
       double maxSpending = (financialSummary['total_spent'] ?? 0).toDouble();
       if (maxSpending > 0) {
         double step = maxSpending / 5;
         return List.generate(5, (index) => 
-          '${_formatCurrency((index + 1) * step)}'
+          globalController.formatCurrency((index + 1) * step)
         );
       }
     }
     
-    // Fallback labels
+    
+    // Fallback labels with current currency
+    String currencySymbol = globalController.formatCurrency(1).substring(0, 1);
+    
     switch (selectedTimeFrame.value) {
       case '1W':
       case '1M':
-        return ['500', '1K', '1.5K', '2K', '2.5K'];
+        return ['${currencySymbol}500', '${currencySymbol}1K', '${currencySymbol}1.5K', '${currencySymbol}2K', '${currencySymbol}2.5K'];
       case '3M':
-        return ['2K', '4K', '6K', '8K', '10K'];
+        return ['${currencySymbol}2K', '${currencySymbol}4K', '${currencySymbol}6K', '${currencySymbol}8K', '${currencySymbol}10K'];
       case '6M':
-        return ['5K', '10K', '15K', '20K', '25K'];
+        return ['${currencySymbol}5K', '${currencySymbol}10K', '${currencySymbol}15K', '${currencySymbol}20K', '${currencySymbol}25K'];
       case '1Y':
-        return ['10K', '20K', '30K', '40K', '50K'];
+        return ['${currencySymbol}10K', '${currencySymbol}20K', '${currencySymbol}30K', '${currencySymbol}40K', '${currencySymbol}50K'];
       case 'ALL':
-        return ['50K', '100K', '150K', '200K', '250K'];
+        return ['${currencySymbol}50K', '${currencySymbol}100K', '${currencySymbol}150K', '${currencySymbol}200K', '${currencySymbol}250K'];
       default:
-        return ['500', '1K', '1.5K', '2K', '2.5K'];
+        return ['${currencySymbol}500', '${currencySymbol}1K', '${currencySymbol}1.5K', '${currencySymbol}2K', '${currencySymbol}2.5K'];
     }
   }
   
