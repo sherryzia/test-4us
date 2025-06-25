@@ -1,4 +1,4 @@
-// lib/views/screens/profile_screen.dart - Updated
+// lib/views/screens/profile_screen.dart - Updated with Photo Support
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/controllers/profile_controller.dart';
 import 'package:expensary/views/screens/about_screen.dart';
@@ -53,8 +53,8 @@ class ProfileScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
               
-              // Profile Image
-              _buildProfileImage(context),
+              // Profile Image with Photo Support
+              controller.buildProfileImage(context),
               
               const SizedBox(height: 30),
               
@@ -104,100 +104,6 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-  
-  Widget _buildProfileImage(BuildContext context) {
-    return Column(
-      children: [
-        Stack(
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF8E2DE2),
-                    Color(0xFF4A00E0),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFF8E2DE2).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.person,
-                  color: kwhite,
-                  size: 60,
-                ),
-              ),
-            ),
-            
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => _buildImageSelectionMenu(),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFAF4BCE),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: kblack.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.camera_alt,
-                    color: kwhite,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 16),
-        
-        GetX<ProfileController>(
-          builder: (controller) => MyText(
-            text: controller.name.value.isNotEmpty ? controller.name.value : 'User',
-            size: 24,
-            weight: FontWeight.bold,
-            color: kwhite,
-          ),
-        ),
-        
-        const SizedBox(height: 4),
-        
-        GetX<ProfileController>(
-          builder: (controller) => MyText(
-            text: controller.email.value.isNotEmpty ? controller.email.value : 'No email',
-            size: 16,
-            color: kwhite.withOpacity(0.7),
-          ),
-        ),
-      ],
     );
   }
   
@@ -296,7 +202,6 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-  
   Widget _buildPasswordSection(ProfileController controller) {
     return Container(
       padding: const EdgeInsets.all(20),

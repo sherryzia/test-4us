@@ -1,10 +1,11 @@
-// lib/services/supabase_service.dart
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 import 'package:expensary/configs/supabase_config.dart';
-
 class SupabaseService {
   static final SupabaseClient _client = SupabaseConfig.client;
   
@@ -478,11 +479,122 @@ class SupabaseService {
   }
 }
   
-  // Create a new expense
-  // Partial file showing only the createExpense method update
-
-// In lib/services/supabase_service.dart, replace or update the createExpense method:
-static Future<Map<String, dynamic>> createExpense({
+static Future<String> uploadProfilePhoto({
+    required String userId,
+    required String filePath,
+    required String fileName,
+  }) async {
+    try {
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+      
+      // Create unique filename with timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileExtension = fileName.split('.').last;
+      final uniqueFileName = '${userId}/profile_${timestamp}.${fileExtension}';
+      
+      // Upload to Supabase Storage
+      final response = await _client.storage
+          .from('profile-photos')
+          .uploadBinary(uniqueFileName, bytes);
+      
+      // Get public URL
+      final publicUrl = _client.storage
+          .from('profile-photos')
+          .getPublicUrl(uniqueFileName);
+      
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading profile photo: $e');
+      rethrow;
+    }
+  }
+  
+  // Update user avatar URL
+  static Future<void> updateUserAvatar({
+    required String userId,
+    required String avatarUrl,
+  }) async {
+    try {
+      await _client
+          .from('users')
+          .update({
+            'avatar_url': avatarUrl,
+            'avatar_updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+    } catch (e) {
+      debugPrint('Error updating user avatar: $e');
+      rethrow;
+    }
+  }
+  
+  // Delete profile photo
+  static Future<void> deleteProfilePhoto({
+    required String userId,
+    required String photoUrl,
+  }) async {
+    try {
+      // Extract file path from URL
+      final uri = Uri.parse(photoUrl);
+      final filePath = uri.pathSegments.last;
+      
+      // Delete from storage
+      await _client.storage
+          .from('profile-photos')
+          .remove(['${userId}/${filePath}']);
+      
+      // Update user record to remove avatar_url
+      await updateUserAvatar(userId: userId, avatarUrl: '');
+    } catch (e) {
+      debugPrint('Error deleting profile photo: $e');
+      rethrow;
+    }
+  }
+  
+  // Get user profile with avatar
+  static Future<Map<String, dynamic>?> getUserProfileWithAvatar(String userId) async {
+    try {
+      final response = await _client
+          .from('users')
+          .select('*, avatar_url, avatar_updated_at')
+          .eq('id', userId)
+          .single();
+      return response;
+    } catch (e) {
+      debugPrint('Get user profile with avatar error: $e');
+      return null;
+    }
+  }
+  
+  // Compress and resize image (optional helper)
+  static Future<String> processImageForUpload(String originalPath) async {
+    try {
+      final file = File(originalPath);
+      final image = img.decodeImage(await file.readAsBytes());
+      
+      if (image == null) throw Exception('Invalid image file');
+      
+      // Resize to max 800x800 while maintaining aspect ratio
+      final resized = img.copyResize(
+        image,
+        width: image.width > image.height ? 800 : null,
+        height: image.height > image.width ? 800 : null,
+      );
+      
+      // Compress and save
+      final compressedBytes = img.encodeJpg(resized, quality: 85);
+      final tempDir = await getTemporaryDirectory();
+      final compressedFile = File('${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await compressedFile.writeAsBytes(compressedBytes);
+      
+      return compressedFile.path;
+    } catch (e) {
+      debugPrint('Error processing image: $e');
+      rethrow;
+    }
+  }static Future<Map<String, dynamic>> createExpense({
   required String title,
   required double amount,
   required DateTime expenseDate,

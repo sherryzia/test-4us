@@ -1,4 +1,4 @@
-// lib/controllers/global_controller.dart
+// lib/controllers/global_controller.dart - Updated with Avatar Support
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -186,12 +186,13 @@ class GlobalController extends GetxController {
     _handleSignOut();
   }
 
-  // Load user profile from database
+  // Load user profile from database - UPDATED to use getUserProfileWithAvatar
   Future<void> _loadUserProfile() async {
     if (currentUser.value == null) return;
 
     try {
-      final profile = await SupabaseService.getUserProfile(
+      // Use the new method that includes avatar_url
+      final profile = await SupabaseService.getUserProfileWithAvatar(
         currentUser.value!.id,
       );
       if (profile != null) {
@@ -390,6 +391,23 @@ class GlobalController extends GetxController {
     await _loadBasicData();
   }
 
+  // Method to refresh user avatar after photo update
+  Future<void> refreshUserAvatar() async {
+    if (!isAuthenticated.value || currentUser.value == null) return;
+    
+    try {
+      final profile = await SupabaseService.getUserProfileWithAvatar(
+        currentUser.value!.id,
+      );
+      if (profile != null) {
+        userProfile.value = profile;
+        userProfile.refresh(); // Force UI update
+      }
+    } catch (e) {
+      debugPrint('Error refreshing user avatar: $e');
+    }
+  }
+
   // Utility methods
   String get userName =>
       userProfile['full_name'] ??
@@ -531,7 +549,7 @@ class GlobalController extends GetxController {
         userProfile['currency'] != null;
   }
 
-  // Get user avatar URL or initials
+  // Get user avatar URL or initials - UPDATED
   String get userInitials {
     final name = userName;
     if (name.length >= 2) {
@@ -540,5 +558,12 @@ class GlobalController extends GetxController {
     return 'U';
   }
 
-  String? get userAvatarUrl => userProfile['avatar_url'];
+  // UPDATED: Better avatar URL handling
+  String? get userAvatarUrl {
+    final avatarUrl = userProfile['avatar_url'];
+    if (avatarUrl != null && avatarUrl.toString().isNotEmpty) {
+      return avatarUrl.toString();
+    }
+    return null;
+  }
 }

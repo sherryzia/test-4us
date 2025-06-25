@@ -1,9 +1,11 @@
-// lib/views/widgets/custom_app_bar.dart - Updated with Profile Navigation
+// lib/views/widgets/custom_app_bar.dart - Updated with Profile Photo Support
 import 'package:expensary/constants/colors.dart';
 import 'package:expensary/views/widgets/my_text.dart';
 import 'package:expensary/controllers/bottom_nav_controller.dart';
+import 'package:expensary/controllers/global_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 enum AppBarType {
   withBackButton,
@@ -136,11 +138,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (type == AppBarType.withProfile || type == AppBarType.withBackButtonAndProfile) {
       return GestureDetector(
         onTap: onProfileTap ?? _defaultProfileTap,
-        child: Container(
+        child: _buildProfileAvatar(),
+      );
+    } else {
+      // For AppBarType.withTitle or AppBarType.withBackButton
+      return actionButton ?? Container(width: 40); // Empty container with same width as back button
+    }
+  }
+
+  // Build profile avatar with photo support
+  Widget _buildProfileAvatar() {
+    return GetX<GlobalController>(
+      builder: (globalController) {
+        final avatarUrl = globalController.userAvatarUrl;
+        final userInitials = globalController.userInitials;
+        
+        return Container(
+          width: 44, // Slightly larger for better visibility
+          height: 44,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [korange, Color(0xFFFF6B35)],
-            ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -150,21 +166,67 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
-          child: CircleAvatar(
-            radius: 20, // Slightly smaller
-            backgroundColor: Colors.transparent,
-            child: Icon(
-              Icons.person,
-              color: kwhite,
-              size: 22, // Slightly smaller icon
-            ),
+          child: ClipOval(
+            child: avatarUrl != null && avatarUrl.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: avatarUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [korange, Color(0xFFFF6B35)],
+                        ),
+                      ),
+                      child: Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(kwhite),
+                          ),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [korange, Color(0xFFFF6B35)],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          userInitials,
+                          style: TextStyle(
+                            color: kwhite,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [korange, Color(0xFFFF6B35)],
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        userInitials,
+                        style: TextStyle(
+                          color: kwhite,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
           ),
-        ),
-      );
-    } else {
-      // For AppBarType.withTitle or AppBarType.withBackButton
-      return actionButton ?? Container(width: 40); // Empty container with same width as back button
-    }
+        );
+      },
+    );
   }
 
   // Default profile tap handler that navigates to profile tab
