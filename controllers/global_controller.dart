@@ -1,4 +1,4 @@
-// lib/controllers/global_controller.dart - Updated with Avatar Support
+// lib/controllers/global_controller.dart - Fixed with Proper Currency Notification
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,6 +19,7 @@ class GlobalController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isAuthenticated = false.obs;
   final RxString currentCurrency = 'PKR'.obs;
+  final RxString previousCurrency = 'PKR'.obs;
   final RxDouble monthlyBudget = 0.0.obs;
 
   // Network status
@@ -28,13 +29,20 @@ class GlobalController extends GetxController {
   Timer? _sessionTimer;
   final RxBool isSessionActive = false.obs;
   final Rx<DateTime> lastActivity = DateTime.now().obs;
-  final int sessionTimeoutMinutes =
-      30; // Auto logout after 30 minutes of inactivity
+  final int sessionTimeoutMinutes = 30;
 
   // Categories and payment methods cache
   final RxList<Map<String, dynamic>> categories = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> paymentMethods =
-      <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> paymentMethods = <Map<String, dynamic>>[].obs;
+
+  // Currency exchange rates (base: USD)
+  final RxMap<String, double> exchangeRates = <String, double>{
+    'USD': 1.0,
+    'EUR': 0.85,
+    'GBP': 0.73,
+    'JPY': 110.0,
+    'PKR': 280.0,
+  }.obs;
 
   // For auth state changes
   late StreamSubscription<AuthState> _authSubscription;
@@ -46,6 +54,7 @@ class GlobalController extends GetxController {
     _initializeAuth();
     _setupAuthListener();
     _startSessionTimer();
+    _loadExchangeRates();
   }
 
   @override
@@ -53,6 +62,49 @@ class GlobalController extends GetxController {
     _authSubscription.cancel();
     _sessionTimer?.cancel();
     super.onClose();
+  }
+
+  // Load exchange rates (in production, fetch from API)
+  void _loadExchangeRates() {
+    exchangeRates.value = {
+      'USD': 1.0,
+      'EUR': 0.85,
+      'GBP': 0.73,
+      'JPY': 110.0,
+      'PKR': 280.0,
+    };
+  }
+
+  // Convert amount between currencies
+  double convertCurrency(double amount, String fromCurrency, String toCurrency) {
+    if (fromCurrency == toCurrency) return amount;
+    
+    final fromRate = exchangeRates[fromCurrency] ?? 1.0;
+    final toRate = exchangeRates[toCurrency] ?? 1.0;
+    
+    // Convert to USD first, then to target currency
+    final usdAmount = amount / fromRate;
+    final convertedAmount = usdAmount * toRate;
+    
+    debugPrint('Converting $amount from $fromCurrency to $toCurrency = $convertedAmount');
+    return convertedAmount;
+  }
+
+  // Get currency symbol
+  String getCurrencySymbol(String? currencyCode) {
+    switch (currencyCode ?? currentCurrency.value) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'PKR':
+      default:
+        return '₨';
+    }
   }
 
   // Monitor network connectivity
@@ -79,7 +131,7 @@ class GlobalController extends GetxController {
         isAuthenticated.value = true;
         await _loadUserProfile();
         await _loadBasicData();
-        _createSession(); // Create a new session or update the existing one
+        _createSession();
         _navigateToMain();
       } else {
         _navigateToLogin();
@@ -186,21 +238,27 @@ class GlobalController extends GetxController {
     _handleSignOut();
   }
 
-  // Load user profile from database - UPDATED to use getUserProfileWithAvatar
+  // Load user profile from database
   Future<void> _loadUserProfile() async {
     if (currentUser.value == null) return;
 
     try {
-      // Use the new method that includes avatar_url
       final profile = await SupabaseService.getUserProfileWithAvatar(
         currentUser.value!.id,
       );
       if (profile != null) {
         userProfile.value = profile;
-        currentCurrency.value = profile['currency'] ?? 'PKR';
+        
+        // Store previous currency for conversion
+        String newCurrency = profile['currency'] ?? 'PKR';
+        if (currentCurrency.value != newCurrency) {
+          previousCurrency.value = currentCurrency.value;
+          currentCurrency.value = newCurrency;
+          debugPrint('Currency changed from ${previousCurrency.value} to $newCurrency');
+        }
+        
         monthlyBudget.value = (profile['monthly_budget'] ?? 0).toDouble();
       } else {
-        // If profile doesn't exist yet, create it
         final userData = {
           'id': currentUser.value!.id,
           'full_name': currentUser.value!.userMetadata?['full_name'] ?? 'User',
@@ -244,7 +302,6 @@ class GlobalController extends GetxController {
       if (isAuthenticated.value) {
         _updateSessionActivity();
 
-        // Auto logout after specified minutes of inactivity
         final timeSinceLastActivity = DateTime.now().difference(
           lastActivity.value,
         );
@@ -266,7 +323,6 @@ class GlobalController extends GetxController {
     if (currentUser.value == null) return;
 
     try {
-      // Get device info
       final deviceInfoPlugin = DeviceInfoPlugin();
       String deviceInfo = 'Unknown device';
 
@@ -287,14 +343,13 @@ class GlobalController extends GetxController {
 
       await SupabaseService.createSession(currentUser.value!.id, {
         'device_info': deviceInfo,
-        'ip_address': 'Unknown', // Getting real IP requires a server
+        'ip_address': 'Unknown',
       });
 
       isSessionActive.value = true;
       lastActivity.value = DateTime.now();
     } catch (e) {
       debugPrint('Error creating session: $e');
-      // Not critical, continue anyway
     }
   }
 
@@ -306,7 +361,6 @@ class GlobalController extends GetxController {
       lastActivity.value = DateTime.now();
     } catch (e) {
       debugPrint('Error updating session activity: $e');
-      // Not critical, continue anyway
     }
   }
 
@@ -318,7 +372,6 @@ class GlobalController extends GetxController {
       isSessionActive.value = false;
     } catch (e) {
       debugPrint('Error ending session: $e');
-      // Not critical, continue anyway
     }
   }
 
@@ -360,18 +413,57 @@ class GlobalController extends GetxController {
     }
   }
 
+  // Update user profile with currency conversion
   Future<void> updateUserProfile(Map<String, dynamic> updates) async {
     if (currentUser.value == null) return;
 
     isLoading.value = true;
 
     try {
+      // Check if currency is being changed
+      final String? newCurrency = updates['currency'];
+      bool currencyChanged = false;
+      
+      if (newCurrency != null && newCurrency != currentCurrency.value) {
+        currencyChanged = true;
+        previousCurrency.value = currentCurrency.value;
+        
+        // Convert monetary values if currency is changing
+        if (updates.containsKey('monthly_budget')) {
+          final double currentBudget = updates['monthly_budget'].toDouble();
+          final double convertedBudget = convertCurrency(
+            currentBudget, 
+            previousCurrency.value, 
+            newCurrency
+          );
+          updates['monthly_budget'] = convertedBudget;
+        }
+        
+        if (updates.containsKey('monthly_income')) {
+          final double currentIncome = updates['monthly_income'].toDouble();
+          final double convertedIncome = convertCurrency(
+            currentIncome, 
+            previousCurrency.value, 
+            newCurrency
+          );
+          updates['monthly_income'] = convertedIncome;
+        }
+      }
+
       await SupabaseService.updateUserProfile(currentUser.value!.id, updates);
-      await _loadUserProfile(); // Reload profile
+      await _loadUserProfile();
+
+      // Notify other controllers about currency change AFTER profile is updated
+      if (currencyChanged) {
+        debugPrint('Notifying currency change from ${previousCurrency.value} to $newCurrency');
+        _notifyAllControllersCurrencyChange(previousCurrency.value, newCurrency!);
+      }
 
       Get.snackbar(
         'Success',
-        'Profile updated successfully',
+        currencyChanged 
+          ? 'Profile updated and amounts converted to $newCurrency'
+          : 'Profile updated successfully',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.withOpacity(0.8),
         colorText: Colors.white,
@@ -382,6 +474,43 @@ class GlobalController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Enhanced notification method for currency change
+  void _notifyAllControllersCurrencyChange(String fromCurrency, String toCurrency) {
+    try {
+      // Delay slightly to ensure currency change is processed
+      Future.delayed(Duration(milliseconds: 100), () {
+        // Update home controller if it exists
+        try {
+          final homeController = Get.find<dynamic>(tag: 'HomeController');
+          if (homeController != null && homeController.hasMethod('onCurrencyChanged')) {
+            homeController.onCurrencyChanged(fromCurrency, toCurrency);
+          }
+        } catch (e) {
+          // Try without tag
+          try {
+            final homeController = Get.find<dynamic>();
+            if (homeController.runtimeType.toString().contains('HomeController')) {
+              homeController.onCurrencyChanged(fromCurrency, toCurrency);
+            }
+          } catch (e2) {
+            debugPrint('HomeController not found for currency change notification');
+          }
+        }
+        
+        // Force refresh of all registered controllers
+        Get.forceAppUpdate();
+      });
+    } catch (e) {
+      debugPrint('Error notifying currency change: $e');
+    }
+  }
+
+  // Force currency change notification (can be called from profile controller)
+  void notifyCurrencyChange(String fromCurrency, String toCurrency) {
+    currentCurrency.value = toCurrency;
+    _notifyAllControllersCurrencyChange(fromCurrency, toCurrency);
   }
 
   Future<void> refreshData() async {
@@ -401,7 +530,7 @@ class GlobalController extends GetxController {
       );
       if (profile != null) {
         userProfile.value = profile;
-        userProfile.refresh(); // Force UI update
+        userProfile.refresh();
       }
     } catch (e) {
       debugPrint('Error refreshing user avatar: $e');
@@ -448,33 +577,23 @@ class GlobalController extends GetxController {
     return paymentMethods.firstWhereOrNull((pm) => pm['name'] == name);
   }
 
-  // Currency formatting
-  String formatCurrency(double amount) {
-    String symbol;
+  // Enhanced currency formatting
+  String formatCurrency(double amount, {String? currencyCode}) {
+    final String currency = currencyCode ?? currentCurrency.value;
+    String symbol = getCurrencySymbol(currency);
     int decimalPlaces;
 
-    // Determine symbol and decimal places based on currency
-    switch (currentCurrency.value) {
+    // Determine decimal places based on currency
+    switch (currency) {
       case 'USD':
-        symbol = '\$';
-        decimalPlaces = 2;
-        break;
       case 'EUR':
-        symbol = '€';
-        decimalPlaces = 2;
-        break;
       case 'GBP':
-        symbol = '£';
         decimalPlaces = 2;
         break;
       case 'JPY':
-        symbol = '¥';
-        decimalPlaces = 0; // JPY typically doesn't use decimal places
-        break;
       case 'PKR':
       default:
-        symbol = '₨';
-        decimalPlaces = 0; // PKR typically displayed without decimal places
+        decimalPlaces = 0;
     }
 
     // Format the number with appropriate decimal places
@@ -494,6 +613,17 @@ class GlobalController extends GetxController {
     }
 
     return '$symbol$formattedNumber';
+  }
+
+  // Convert and format currency
+  String formatCurrencyWithConversion(
+    double amount, 
+    String fromCurrency, 
+    {String? toCurrency}
+  ) {
+    final String targetCurrency = toCurrency ?? currentCurrency.value;
+    final double convertedAmount = convertCurrency(amount, fromCurrency, targetCurrency);
+    return formatCurrency(convertedAmount, currencyCode: targetCurrency);
   }
 
   // Error handling
@@ -549,7 +679,7 @@ class GlobalController extends GetxController {
         userProfile['currency'] != null;
   }
 
-  // Get user avatar URL or initials - UPDATED
+  // Get user avatar URL or initials
   String get userInitials {
     final name = userName;
     if (name.length >= 2) {
@@ -558,7 +688,6 @@ class GlobalController extends GetxController {
     return 'U';
   }
 
-  // UPDATED: Better avatar URL handling
   String? get userAvatarUrl {
     final avatarUrl = userProfile['avatar_url'];
     if (avatarUrl != null && avatarUrl.toString().isNotEmpty) {

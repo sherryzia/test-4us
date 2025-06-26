@@ -1,4 +1,4 @@
-// lib/controllers/profile_controller.dart - Fixed Complete Version with buildProfileImage
+// lib/controllers/profile_controller.dart - Fixed with Proper Currency Change Notification
 import 'package:expensary/services/supabase_service.dart';
 import 'package:expensary/views/screens/login_screen.dart';
 import 'package:expensary/constants/colors.dart';
@@ -19,6 +19,7 @@ class ProfileController extends GetxController {
   final RxString name = ''.obs;
   final RxString email = ''.obs;
   final RxString currency = ''.obs;
+  final RxString previousCurrency = ''.obs;
   final RxDouble monthlyBudget = 0.0.obs;
   final RxDouble monthlyIncome = 0.0.obs;
   final RxString avatarUrl = ''.obs;
@@ -38,14 +39,16 @@ class ProfileController extends GetxController {
   final isConfirmPasswordVisible = false.obs;
   final isLoading = false.obs;
 
-  // Currency options
-  final List<String> currencies = [
-    'PKR (₨)',
-    'USD (\$)',
-    'EUR (€)',
-    'GBP (£)',
-    'JPY (¥)'
+  // Currency options with display names
+  final List<Map<String, String>> currencyOptions = [
+    {'code': 'PKR', 'display': 'PKR (₨)', 'symbol': '₨'},
+    {'code': 'USD', 'display': 'USD (\$)', 'symbol': '\$'},
+    {'code': 'EUR', 'display': 'EUR (€)', 'symbol': '€'},
+    {'code': 'GBP', 'display': 'GBP (£)', 'symbol': '£'},
+    {'code': 'JPY', 'display': 'JPY (¥)', 'symbol': '¥'},
   ];
+
+  List<String> get currencies => currencyOptions.map((c) => c['display']!).toList();
 
   @override
   void onInit() {
@@ -78,12 +81,15 @@ class ProfileController extends GetxController {
         avatarUrl.value = response['avatar_url'] ?? '';
         
         String dbCurrency = response['currency'] ?? 'PKR';
-        String displayCurrency = currencies.firstWhere(
-          (c) => c.startsWith(dbCurrency),
-          orElse: () => currencies.first
-        );
+        String displayCurrency = currencyOptions.firstWhere(
+          (c) => c['code'] == dbCurrency,
+          orElse: () => currencyOptions.first
+        )['display']!;
         
+        // Store previous currency for conversion tracking
+        previousCurrency.value = currency.value;
         currency.value = displayCurrency;
+        
         monthlyBudget.value = (response['monthly_budget'] ?? 0).toDouble();
         monthlyIncome.value = (response['monthly_income'] ?? 0).toDouble();
         
@@ -110,7 +116,6 @@ class ProfileController extends GetxController {
   
   // ====== Profile Photo Methods ======
   
-  // Take photo from camera
   Future<void> takePhotoFromCamera() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -133,7 +138,6 @@ class ProfileController extends GetxController {
     }
   }
   
-  // Pick photo from gallery
   Future<void> pickPhotoFromGallery() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -156,11 +160,9 @@ class ProfileController extends GetxController {
     }
   }
   
-  // Remove profile photo
   Future<void> removeProfilePhoto() async {
     if (avatarUrl.value.isEmpty) return;
     
-    // Show confirmation dialog
     final bool? confirmed = await Get.dialog<bool>(
       AlertDialog(
         backgroundColor: Color(0xFF2A2D40),
@@ -190,13 +192,11 @@ class ProfileController extends GetxController {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return;
       
-      // Delete from storage and update user record
       await SupabaseService.deleteProfilePhoto(
         userId: userId,
         photoUrl: avatarUrl.value,
       );
       
-      // Update local state
       avatarUrl.value = '';
       
       Get.snackbar('Success', 'Profile photo removed successfully',
@@ -215,7 +215,6 @@ class ProfileController extends GetxController {
     }
   }
   
-  // Private method to handle photo upload
   Future<void> _uploadProfilePhoto(String filePath) async {
     isUploadingPhoto.value = true;
     
@@ -232,7 +231,6 @@ class ProfileController extends GetxController {
           );
         } catch (e) {
           debugPrint('Failed to delete old photo: $e');
-          // Continue with upload even if deletion fails
         }
       }
       
@@ -398,53 +396,178 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<void> changeCurrency(String newCurrency) async {
+  // Enhanced currency change with conversion and proper notification
+  Future<void> changeCurrency(String newCurrencyDisplay) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return;
 
-    try {
-      // Extract the currency code from the display string (e.g., "PKR (₨)" -> "PKR")
-      String currencyCode = newCurrency.split(' ')[0];
-      
-      await supabase
-          .from('users')
-          .update({'currency': currencyCode})
-          .eq('id', userId);
+    // Show confirmation dialog for currency conversion
+    final bool? confirmed = await _showCurrencyChangeDialog(newCurrencyDisplay);
+    if (confirmed != true) return;
 
-      currency.value = newCurrency;
+    isLoading.value = true;
+
+    try {
+      // Extract currency codes
+      final newCurrencyCode = currencyOptions.firstWhere(
+        (c) => c['display'] == newCurrencyDisplay,
+        orElse: () => currencyOptions.first,
+      )['code']!;
       
-      // Update global controller's currency
+      final oldCurrencyCode = currencyOptions.firstWhere(
+        (c) => c['display'] == currency.value,
+        orElse: () => currencyOptions.first,
+      )['code']!;
+
+      debugPrint('Changing currency from $oldCurrencyCode to $newCurrencyCode');
+
+      // Get global controller for conversion
+      final globalController = Get.find<GlobalController>();
+      
+      // Convert current budget and income values
+      final currentBudget = double.tryParse(budgetController.text) ?? 0;
+      final currentIncome = double.tryParse(incomeController.text) ?? 0;
+      
+      final convertedBudget = globalController.convertCurrency(
+        currentBudget, 
+        oldCurrencyCode, 
+        newCurrencyCode
+      );
+      
+      final convertedIncome = globalController.convertCurrency(
+        currentIncome, 
+        oldCurrencyCode, 
+        newCurrencyCode
+      );
+
+      debugPrint('Converting budget: $currentBudget -> $convertedBudget');
+      debugPrint('Converting income: $currentIncome -> $convertedIncome');
+
+      // Update database with converted values
+      await supabase.from('users').update({
+        'currency': newCurrencyCode,
+        'monthly_budget': convertedBudget,
+        'monthly_income': convertedIncome,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
+
+      // Update local state
+      currency.value = newCurrencyDisplay;
+      monthlyBudget.value = convertedBudget;
+      monthlyIncome.value = convertedIncome;
+      
+      // Update text controllers with converted values
+      budgetController.text = convertedBudget.toStringAsFixed(0);
+      incomeController.text = convertedIncome.toStringAsFixed(0);
+      
+      // Update global controller and notify change
+      globalController.currentCurrency.value = newCurrencyCode;
+      
+      // IMPORTANT: Explicitly notify currency change to trigger home controller update
+      globalController.notifyCurrencyChange(oldCurrencyCode, newCurrencyCode);
+      
+      // Force refresh home controller
       try {
-        final globalController = Get.find<GlobalController>();
-        globalController.currentCurrency.value = currencyCode;
-        
-        // Refresh relevant screens
-        try {
-          final homeController = Get.find<HomeController>();
-          homeController.update(); // Force UI update
-        } catch (e) {
-          // Home controller might not be initialized yet
-        }
+        final homeController = Get.find<HomeController>();
+        await homeController.refreshData();
       } catch (e) {
-        debugPrint('Error updating global controller: $e');
+        debugPrint('Error refreshing home controller: $e');
       }
 
-      Get.snackbar('Success', 'Currency changed to $newCurrency',
+      Get.snackbar(
+        'Currency Changed', 
+        'Currency changed to $newCurrencyDisplay. All amounts have been converted automatically.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.withOpacity(0.8),
         colorText: Colors.white,
+        duration: Duration(seconds: 4),
       );
     } catch (e) {
-      Get.snackbar('Error', e.toString(),
+      Get.snackbar('Error', 'Failed to change currency: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
       );
+    } finally {
+      isLoading.value = false;
     }
   }
 
+  // Show currency change confirmation dialog
+  Future<bool?> _showCurrencyChangeDialog(String newCurrency) async {
+    final oldCurrencyCode = currencyOptions.firstWhere(
+      (c) => c['display'] == currency.value,
+      orElse: () => currencyOptions.first,
+    )['code']!;
+    
+    final newCurrencyCode = currencyOptions.firstWhere(
+      (c) => c['display'] == newCurrency,
+      orElse: () => currencyOptions.first,
+    )['code']!;
+
+    if (oldCurrencyCode == newCurrencyCode) return false;
+
+    return await Get.dialog<bool>(
+      AlertDialog(
+        backgroundColor: Color(0xFF2A2D40),
+        title: Text(
+          'Change Currency', 
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You are changing your currency from ${currency.value} to $newCurrency.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'All your amounts (budget, income, expenses) will be automatically converted to the new currency.',
+                      style: TextStyle(color: Colors.blue, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Do you want to continue?',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(
+              'Convert & Change', 
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> resetAllExpenses() async {
-    // Show confirmation dialog
     final bool? confirmed = await Get.dialog<bool>(
       AlertDialog(
         backgroundColor: Color(0xFF2A2D40),
@@ -474,13 +597,11 @@ class ProfileController extends GetxController {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return;
 
-      // Delete all expenses for this user
       await supabase
           .from('expenses')
           .delete()
           .eq('user_id', userId);
 
-      // Refresh home controller data
       try {
         final homeController = Get.find<HomeController>();
         await homeController.loadData();
@@ -511,7 +632,6 @@ class ProfileController extends GetxController {
 
   // ====== UI Helper Methods ======
   
-  // Build profile image widget - THIS WAS THE MISSING METHOD!
   Widget buildProfileImage(BuildContext context) {
     return Column(
       children: [
@@ -656,7 +776,6 @@ class ProfileController extends GetxController {
     );
   }
 
-  // Show image selection bottom sheet
   void showImageSelectionBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -732,6 +851,7 @@ class ProfileController extends GetxController {
       ),
     );
   }
+
 
   Widget _buildImageOptionButton({
     required IconData icon,

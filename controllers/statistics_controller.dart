@@ -1,4 +1,4 @@
-// lib/controllers/statistics_controller.dart - Updated with Real Data
+// lib/controllers/statistics_controller.dart - Fixed with Currency Conversion
 import 'package:get/get.dart';
 import 'package:expensary/controllers/global_controller.dart';
 import 'package:expensary/services/supabase_service.dart';
@@ -10,6 +10,7 @@ class StatisticsController extends GetxController {
   final RxList<double> realChartData = <double>[].obs;
   final RxList<String> realChartLabels = <String>[].obs;
   final RxMap<String, dynamic> financialSummary = <String, dynamic>{}.obs;
+  final RxString currentDisplayCurrency = 'PKR'.obs;
   
   // Time frame options
   final List<Map<String, String>> timeFrameOptions = [
@@ -25,6 +26,40 @@ class StatisticsController extends GetxController {
   void onInit() {
     super.onInit();
     loadStatisticsData();
+    
+    // Listen to global controller currency changes
+    ever(Get.find<GlobalController>().currentCurrency, (String newCurrency) {
+      if (currentDisplayCurrency.value != newCurrency) {
+        _convertDataToCurrency(currentDisplayCurrency.value, newCurrency);
+        currentDisplayCurrency.value = newCurrency;
+      }
+    });
+  }
+  
+  // Convert all statistical data when currency changes
+  void _convertDataToCurrency(String fromCurrency, String toCurrency) {
+    if (fromCurrency == toCurrency) return;
+    
+    final globalController = Get.find<GlobalController>();
+    
+    // Convert financial summary amounts
+    if (financialSummary.isNotEmpty) {
+      final convertedSummary = <String, dynamic>{};
+      
+      financialSummary.forEach((key, value) {
+        if (value is num && (key.contains('amount') || key.contains('spent') || key.contains('income'))) {
+          convertedSummary[key] = globalController.convertCurrency(
+            value.toDouble(), fromCurrency, toCurrency
+          );
+        } else {
+          convertedSummary[key] = value;
+        }
+      });
+      
+      financialSummary.value = convertedSummary;
+    }
+    
+    debugPrint('Converted statistics data from $fromCurrency to $toCurrency');
   }
   
   void changeTimeFrame(String timeFrame) {
@@ -38,6 +73,8 @@ class StatisticsController extends GetxController {
     try {
       final globalController = Get.find<GlobalController>();
       if (!globalController.isAuthenticated.value) return;
+      
+      currentDisplayCurrency.value = globalController.currentCurrency.value;
       
       final userId = globalController.userId;
       final dates = _getDateRange();
@@ -318,9 +355,8 @@ class StatisticsController extends GetxController {
       }
     }
     
-    
     // Fallback labels with current currency
-    String currencySymbol = globalController.formatCurrency(1).substring(0, 1);
+    String currencySymbol = globalController.getCurrencySymbol(null);
     
     switch (selectedTimeFrame.value) {
       case '1W':
@@ -336,16 +372,6 @@ class StatisticsController extends GetxController {
         return ['${currencySymbol}50K', '${currencySymbol}100K', '${currencySymbol}150K', '${currencySymbol}200K', '${currencySymbol}250K'];
       default:
         return ['${currencySymbol}500', '${currencySymbol}1K', '${currencySymbol}1.5K', '${currencySymbol}2K', '${currencySymbol}2.5K'];
-    }
-  }
-  
-  String _formatCurrency(double amount) {
-    if (amount >= 1000000) {
-      return '${(amount / 1000000).toStringAsFixed(1)}M';
-    } else if (amount >= 1000) {
-      return '${(amount / 1000).toStringAsFixed(0)}K';
-    } else {
-      return amount.toStringAsFixed(0);
     }
   }
   
