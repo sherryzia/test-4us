@@ -1,4 +1,4 @@
-// lib/controllers/home_controller.dart - Fixed with Proper Currency Conversion
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,9 +20,10 @@ class HomeController extends GetxController {
     'totalIncome': 0.0,
   }.obs;
   
-  // Store original expense data with their original currency
+  // Store original expense data with their original currency and amounts
   final RxList<Map<String, dynamic>> originalExpenseData = <Map<String, dynamic>>[].obs;
   final RxString currentDisplayCurrency = 'PKR'.obs;
+  final RxString originalDataCurrency = 'PKR'.obs; // Track the currency of original data
 
   // Calculate percentages for the circle chart
   double get spentPercentage {
@@ -68,42 +69,49 @@ class HomeController extends GetxController {
     super.onClose();
   }
 
-  // Convert all amounts when currency changes
+  // Enhanced conversion method that properly handles original data
   void _convertAllAmountsToCurrency(String fromCurrency, String toCurrency) {
     if (fromCurrency == toCurrency) return;
     
     final globalController = Get.find<GlobalController>();
     
-    // Convert main amounts
-    monthlyBudget.value = globalController.convertCurrency(
-      monthlyBudget.value, fromCurrency, toCurrency
-    );
+    // Convert main amounts using original stored values
+    if (originalAmounts['monthlyBudget']! > 0) {
+      monthlyBudget.value = globalController.convertCurrency(
+        originalAmounts['monthlyBudget']!, originalDataCurrency.value, toCurrency
+      );
+    }
     
-    spentAmount.value = globalController.convertCurrency(
-      spentAmount.value, fromCurrency, toCurrency
-    );
+    if (originalAmounts['spentAmount']! > 0) {
+      spentAmount.value = globalController.convertCurrency(
+        originalAmounts['spentAmount']!, originalDataCurrency.value, toCurrency
+      );
+    }
     
-    totalIncome.value = globalController.convertCurrency(
-      totalIncome.value, fromCurrency, toCurrency
-    );
+    if (originalAmounts['totalIncome']! > 0) {
+      totalIncome.value = globalController.convertCurrency(
+        originalAmounts['totalIncome']!, originalDataCurrency.value, toCurrency
+      );
+    }
     
     // Recalculate available balance
     availableBalance.value = monthlyBudget.value + totalIncome.value - spentAmount.value;
     
-    // Convert expense items
+    // Convert expense items using original data
     List<ExpenseItem> convertedExpenses = [];
-    for (var expense in expenses) {
+    for (var originalExpense in originalExpenseData) {
+      final originalAmount = (originalExpense['amount'] as num).toDouble();
       final convertedAmount = globalController.convertCurrency(
-        expense.amount.abs(), fromCurrency, toCurrency
+        originalAmount.abs(), originalDataCurrency.value, toCurrency
       );
       
       convertedExpenses.add(ExpenseItem(
-        title: expense.title,
-        date: expense.date,
-        amount: expense.amount < 0 ? -convertedAmount : convertedAmount,
-        iconData: expense.iconData,
-        iconBg: expense.iconBg,
-        category: expense.category,
+        title: originalExpense['title'] ?? 'Unknown',
+        date: _formatDate(originalExpense['expense_date']),
+        amount: originalAmount < 0 ? -convertedAmount : convertedAmount,
+        iconData: originalExpense['icon_data'] ?? 'shopping_bag',
+        iconBg: originalExpense['icon_bg'] ?? 'black',
+        category: originalExpense['category'] ?? getCategoryFromMerchant(originalExpense['title'] ?? 'Unknown'),
       ));
     }
     
@@ -125,10 +133,12 @@ class HomeController extends GetxController {
       final globalController = Get.find<GlobalController>();
       if (globalController.isAuthenticated.value) {
         final userProfile = globalController.userProfile;
-        monthlyBudget.value = userProfile['monthly_budget']?.toDouble() ?? 0.0;
+        final originalBudget = userProfile['monthly_budget']?.toDouble() ?? 0.0;
+        monthlyBudget.value = originalBudget;
         
-        // Store current currency
+        // Store current currency and mark it as the original data currency
         currentDisplayCurrency.value = globalController.currentCurrency.value;
+        originalDataCurrency.value = globalController.currentCurrency.value;
 
         final expensesData = await SupabaseService.getExpenses(
           userId: globalController.userId,
@@ -168,10 +178,10 @@ class HomeController extends GetxController {
         totalIncome.value = income;
         availableBalance.value = monthlyBudget.value + totalIncome.value - spentAmount.value;
         
-        // Store original amounts for future conversions
-        originalAmounts['monthlyBudget'] = monthlyBudget.value;
-        originalAmounts['spentAmount'] = spentAmount.value;
-        originalAmounts['totalIncome'] = totalIncome.value;
+        // Store original amounts for future conversions (in current user currency)
+        originalAmounts['monthlyBudget'] = originalBudget;
+        originalAmounts['spentAmount'] = spent;
+        originalAmounts['totalIncome'] = income;
         
         debugPrint('Loaded data - Spent: ${spentAmount.value}, Income: ${totalIncome.value}, Budget: ${monthlyBudget.value}');
       }
@@ -190,7 +200,7 @@ class HomeController extends GetxController {
     final globalController = Get.find<GlobalController>();
     if (currentDisplayCurrency.value != globalController.currentCurrency.value) {
       _convertAllAmountsToCurrency(
-        currentDisplayCurrency.value, 
+        originalDataCurrency.value, // Convert from original data currency
         globalController.currentCurrency.value
       );
       currentDisplayCurrency.value = globalController.currentCurrency.value;

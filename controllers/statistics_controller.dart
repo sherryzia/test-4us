@@ -1,4 +1,4 @@
-// lib/controllers/statistics_controller.dart - Fixed with Currency Conversion
+
 import 'package:get/get.dart';
 import 'package:expensary/controllers/global_controller.dart';
 import 'package:expensary/services/supabase_service.dart';
@@ -11,6 +11,11 @@ class StatisticsController extends GetxController {
   final RxList<String> realChartLabels = <String>[].obs;
   final RxMap<String, dynamic> financialSummary = <String, dynamic>{}.obs;
   final RxString currentDisplayCurrency = 'PKR'.obs;
+  final RxString originalDataCurrency = 'PKR'.obs; // Track original data currency
+  
+  // Store original expense data for currency conversion
+  final RxList<Map<String, dynamic>> originalExpenseData = <Map<String, dynamic>>[].obs;
+  final RxMap<String, dynamic> originalFinancialSummary = <String, dynamic>{}.obs;
   
   // Time frame options
   final List<Map<String, String>> timeFrameOptions = [
@@ -36,20 +41,20 @@ class StatisticsController extends GetxController {
     });
   }
   
-  // Convert all statistical data when currency changes
+  // Enhanced conversion method using original data
   void _convertDataToCurrency(String fromCurrency, String toCurrency) {
     if (fromCurrency == toCurrency) return;
     
     final globalController = Get.find<GlobalController>();
     
-    // Convert financial summary amounts
-    if (financialSummary.isNotEmpty) {
+    // Convert financial summary amounts using original data
+    if (originalFinancialSummary.isNotEmpty) {
       final convertedSummary = <String, dynamic>{};
       
-      financialSummary.forEach((key, value) {
+      originalFinancialSummary.forEach((key, value) {
         if (value is num && (key.contains('amount') || key.contains('spent') || key.contains('income'))) {
           convertedSummary[key] = globalController.convertCurrency(
-            value.toDouble(), fromCurrency, toCurrency
+            value.toDouble(), originalDataCurrency.value, toCurrency
           );
         } else {
           convertedSummary[key] = value;
@@ -57,9 +62,37 @@ class StatisticsController extends GetxController {
       });
       
       financialSummary.value = convertedSummary;
+      
+      // Reprocess chart data with converted amounts
+      if (originalExpenseData.isNotEmpty) {
+        _reprocessChartDataWithConversion(toCurrency);
+      }
     }
     
     debugPrint('Converted statistics data from $fromCurrency to $toCurrency');
+  }
+  
+  // Reprocess chart data with currency conversion
+  void _reprocessChartDataWithConversion(String toCurrency) {
+    final globalController = Get.find<GlobalController>();
+    final dates = _getDateRange();
+    
+    // Convert original expense data
+    List<Map<String, dynamic>> convertedExpenses = [];
+    for (var expense in originalExpenseData) {
+      final originalAmount = (expense['amount'] as num).toDouble();
+      final convertedAmount = globalController.convertCurrency(
+        originalAmount.abs(), originalDataCurrency.value, toCurrency
+      );
+      
+      convertedExpenses.add({
+        ...expense,
+        'amount': originalAmount < 0 ? -convertedAmount : convertedAmount,
+      });
+    }
+    
+    // Reprocess chart data with converted amounts
+    _processChartData(convertedExpenses, dates);
   }
   
   void changeTimeFrame(String timeFrame) {
@@ -75,6 +108,7 @@ class StatisticsController extends GetxController {
       if (!globalController.isAuthenticated.value) return;
       
       currentDisplayCurrency.value = globalController.currentCurrency.value;
+      originalDataCurrency.value = globalController.currentCurrency.value;
       
       final userId = globalController.userId;
       final dates = _getDateRange();
@@ -87,6 +121,9 @@ class StatisticsController extends GetxController {
         includeRelations: false,
       );
       
+      // Store original data
+      originalExpenseData.value = List.from(expenses);
+      
       // Get financial summary
       final summary = await SupabaseService.getSpendingSummary(
         userId: userId,
@@ -94,6 +131,8 @@ class StatisticsController extends GetxController {
         endDate: dates['end'],
       );
       
+      // Store original summary
+      originalFinancialSummary.value = Map.from(summary);
       financialSummary.value = summary;
       
       // Process data for chart
