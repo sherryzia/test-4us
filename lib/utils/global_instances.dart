@@ -1,2 +1,0 @@
-
-// SignUpController signUpController = SignUpController.instance;
