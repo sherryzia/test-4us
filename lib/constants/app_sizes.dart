@@ -1,12 +1,9 @@
 import 'package:flutter/widgets.dart';
 
-class AppSizes {
-  static const DEFAULT = EdgeInsets.symmetric(
-    horizontal: 20,
-    vertical: 16,
-  );
+class AppSize {
+  static const DEFAULT = EdgeInsets.all(16);
   static const HORIZONTAL = EdgeInsets.symmetric(
-    horizontal: 20,
+    horizontal: 16,
   );
   static const VERTICAL = EdgeInsets.symmetric(
     vertical: 16,

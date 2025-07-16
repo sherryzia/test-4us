@@ -1,5 +1,5 @@
-import 'package:candid/view/screens/launch/splash_screen.dart';
 import 'package:get/get.dart';
+import '../../view/screens/launch/splash_screen.dart';
 
 class AppRoutes {
   static final List<GetPage> pages = [
