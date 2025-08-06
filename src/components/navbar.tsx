@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useTheme } from "@/components/theme-provider"
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -17,6 +18,7 @@ const navigation = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
+  const { theme } = useTheme() // <--- access theme here
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,12 +26,12 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/lovable-uploads/8c7abfae-6b43-4870-824c-d3b54686bb72.png" 
-              alt="WizMark" 
-              className="h-8 w-auto"
-            />
-          </Link>
+      <img 
+        src={theme === "dark" ? "/lovable-uploads/Logowhite.png" : "/lovable-uploads/Logoblack.png"}
+        alt="WizMark" 
+        className="h-8 w-auto"
+      />
+    </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-1">

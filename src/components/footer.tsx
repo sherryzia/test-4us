@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import { useTheme } from "@/components/theme-provider"
 
 const navigation = {
   main: [
@@ -19,18 +20,20 @@ const navigation = {
   ]
 }
 
-export function Footer() {
+export function Footer() { 
+    const { theme } = useTheme() // <--- access theme here
+  
   return (
     <footer className="bg-card border-t">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-2">
-            <img 
-              src="/lovable-uploads/8c7abfae-6b43-4870-824c-d3b54686bb72.png" 
-              alt="WizMark" 
+      <img 
+        src={theme === "dark" ? "/lovable-uploads/Logowhite.png" : "/lovable-uploads/Logoblack.png"}
+        alt="WizMark" 
               className="h-8 w-auto mb-4"
-            />
+      />
             <p className="text-muted-foreground mb-6 max-w-md">
               WizMark is a cutting-edge tech company providing innovative solutions in mobile app development, 
               web development, social media marketing, and AI solutions.
